@@ -208,6 +208,16 @@
   .link-btn:hover{text-decoration:underline;}
   .loading-note{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:14px;}
 
+  .password-wrap{position:relative;}
+  .password-wrap input{padding-right:64px;}
+  .toggle-pass{
+    position:absolute;right:5px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;
+    font-family:'Sarabun',sans-serif;font-size:12.5px;font-weight:600;
+    color:var(--blue);padding:5px 8px;line-height:1;
+  }
+  .toggle-pass:hover{text-decoration:underline;}
+
   @media (max-width:640px){
     .member-row{grid-template-columns:1fr;}
   }
@@ -256,7 +266,10 @@
             </div>
             <div class="field">
               <label for="li-pass">รหัสผ่าน</label>
-              <input type="password" id="li-pass" placeholder="••••••••" required>
+              <div class="password-wrap">
+                <input type="password" id="li-pass" placeholder="••••••••" required>
+                <button type="button" class="toggle-pass" data-target="li-pass">แสดง</button>
+              </div>
             </div>
             <button type="submit" class="btn accent">เข้าสู่ระบบ</button>
             <div class="switch-line">ยังไม่มีบัญชี? <a id="go-register">ลงทะเบียนใช้งาน</a></div>
@@ -266,7 +279,10 @@
             <div class="error-box" id="err-login-admin"></div>
             <div class="field">
               <label for="li-admin-code">รหัสผู้ดูแลระบบ</label>
-              <input type="password" id="li-admin-code" placeholder="กรอกรหัสแอดมิน" required>
+              <div class="password-wrap">
+                <input type="password" id="li-admin-code" placeholder="กรอกรหัสแอดมิน" required>
+                <button type="button" class="toggle-pass" data-target="li-admin-code">แสดง</button>
+              </div>
             </div>
             <div class="field-hint" style="margin-bottom:16px;">สำหรับเจ้าหน้าที่ผู้ดูแลเว็บไซต์เท่านั้น</div>
             <button type="submit" class="btn">เข้าสู่ระบบผู้ดูแล</button>
@@ -357,11 +373,17 @@
             <div class="form-row2">
               <div class="field">
                 <label for="rg-pass">รหัสผ่าน</label>
-                <input type="password" id="rg-pass" required>
+                <div class="password-wrap">
+                  <input type="password" id="rg-pass" required>
+                  <button type="button" class="toggle-pass" data-target="rg-pass">แสดง</button>
+                </div>
               </div>
               <div class="field">
                 <label for="rg-pass2">ยืนยันรหัสผ่าน</label>
-                <input type="password" id="rg-pass2" required>
+                <div class="password-wrap">
+                  <input type="password" id="rg-pass2" required>
+                  <button type="button" class="toggle-pass" data-target="rg-pass2">แสดง</button>
+                </div>
               </div>
             </div>
 
@@ -703,6 +725,21 @@
   async function refreshUsers(){ users = await loadAllUsers(); return users; }
   async function refreshProjects(){ projects = await loadAllProjects(); return projects; }
 
+  // ---- Show/hide password toggles ----
+  document.querySelectorAll(".toggle-pass").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const target = document.getElementById(btn.dataset.target);
+      if(!target) return;
+      if(target.type === "password"){
+        target.type = "text";
+        btn.textContent = "ซ่อน";
+      }else{
+        target.type = "password";
+        btn.textContent = "แสดง";
+      }
+    });
+  });
+
   // ---- Tabs on login screen ----
   document.querySelectorAll(".tab").forEach(tab=>{
     tab.addEventListener("click", ()=>{
@@ -1037,7 +1074,9 @@
       await ensureSeedData();
       await refreshUsers();
       await refreshProjects();
-      $("#storage-status").textContent = "เชื่อมต่อฐานข้อมูลสำเร็จ — บัญชีและข้อมูลโครงงานทั้งหมดถูกเก็บไว้ถาวร";
+      $("#storage-status").textContent = hasNativeStorage()
+        ? "เชื่อมต่อฐานข้อมูลกลางสำเร็จ — ทุกเครื่องที่เปิดผ่านลิงก์นี้เห็นข้อมูลเดียวกัน"
+        : "หมายเหตุ: เปิดเป็นไฟล์ในเครื่องนี้ ข้อมูลจะบันทึกเฉพาะเบราว์เซอร์นี้ ไม่ share ไปเครื่องอื่น";
     }catch(err){
       console.error("init error:", err);
       $("#storage-status").textContent = "เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง";
