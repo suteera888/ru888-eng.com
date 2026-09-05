@@ -47,9 +47,13 @@
 
   /* ---------- Auth screens ---------- */
   .auth-wrap{
+    position:relative;
     min-height:100vh;
     display:flex;align-items:center;justify-content:center;
-    padding:40px 20px;
+    padding:40px 20px 70px;
+  }
+  .auth-wrap .loading-note{
+    position:absolute;left:20px;right:20px;bottom:20px;margin:0;
   }
   .auth-frame{
     position:relative;
@@ -288,8 +292,8 @@
             <button type="submit" class="btn">เข้าสู่ระบบผู้ดูแล</button>
           </form>
         </div>
-        <div class="loading-note" id="storage-status">กำลังเชื่อมต่อฐานข้อมูล...</div>
       </div>
+      <div class="loading-note" id="storage-status">กำลังเชื่อมต่อฐานข้อมูล...</div>
     </div>
   </section>
 
@@ -545,8 +549,8 @@
   // ถ้ายังไม่ตั้งค่า (ปล่อยเป็นค่าเริ่มต้น) แอปจะสลับไปทำงานแบบ
   // เก็บข้อมูลในเครื่องนี้เท่านั้น (โหมดเดิม) โดยอัตโนมัติ
   // =========================================================
-  const SUPABASE_URL = "YOUR_SUPABASE_URL";
-  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  const SUPABASE_URL = "https://phgjucwmpccyglqnfass.supabase.co/rest/v1/";
+  const SUPABASE_ANON_KEY = "sb_publishable_XpPzKaDAbkYx54sMzJa8jw_aUblV19a";
 
   const ADMIN_CODE = "ENGRU-ADMIN-2026";
   const SEED_FLAG_KEY = "meta:seeded_v1";
