@@ -193,6 +193,21 @@
   #btn-add-member{margin-bottom:20px;}
   #btn-add-member:disabled{cursor:not-allowed;}
 
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(20,26,36,0.55);
+    align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{
+    background:var(--panel);border:1px solid var(--line);width:520px;max-width:100%;
+    padding:24px 26px;max-height:85vh;overflow:auto;
+  }
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;}
+  .modal-head h3{margin:0;font-size:16px;}
+  .link-btn{background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;font-weight:600;padding:0;font-family:'Sarabun',sans-serif;}
+  .link-btn:hover{text-decoration:underline;}
+  .loading-note{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:14px;}
+
   @media (max-width:640px){
     .member-row{grid-template-columns:1fr;}
   }
@@ -257,6 +272,7 @@
             <button type="submit" class="btn">เข้าสู่ระบบผู้ดูแล</button>
           </form>
         </div>
+        <div class="loading-note" id="storage-status">กำลังเชื่อมต่อฐานข้อมูล...</div>
       </div>
     </div>
   </section>
@@ -406,28 +422,14 @@
       </div>
 
       <div class="card">
-        <h2>รายการโครงงานที่ส่งเข้าสอบ</h2>
+        <h2>ตารางสอบโครงงาน</h2>
         <table>
           <thead>
-            <tr><th>ชื่อเรื่องโครงงาน</th><th>สมาชิก</th><th>อาจารย์ที่ปรึกษา</th><th>ผู้ส่งข้อมูล</th><th>วันที่ส่ง</th></tr>
+            <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>จำนวนสมาชิก</th><th>อาจารย์ที่ปรึกษา</th><th>วันที่ส่งข้อมูล</th><th></th></tr>
           </thead>
           <tbody id="project-table"></tbody>
         </table>
         <div class="empty" id="project-empty">ยังไม่มีโครงงานที่ส่งเข้าระบบ</div>
-      </div>
-
-      <div class="card">
-        <h2>ตารางสอบโครงงาน</h2>
-        <table>
-          <thead>
-            <tr><th>ชื่อโครงงาน</th><th>นักศึกษา</th><th>อาจารย์ที่ปรึกษา</th><th>วันที่สอบ</th><th>ห้อง</th><th>สถานะ</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>ระบบตรวจจับรอยร้าวคอนกรีตด้วยภาพถ่าย</td><td>สมชาย ใจดี</td><td>ผศ.ดร.วิภา ศรีสุข</td><td>18 ก.ย. 2569</td><td>วศ.301</td><td><span class="status scheduled">รอสอบ</span></td></tr>
-            <tr><td>ระบบควบคุมพลังงานแผงโซลาร์อัจฉริยะ</td><td>สุดา แสงทอง</td><td>ดร.ประพันธ์ ทองแท้</td><td>19 ก.ย. 2569</td><td>วศ.204</td><td><span class="status scheduled">รอสอบ</span></td></tr>
-            <tr><td>หุ่นยนต์ตรวจสอบท่อระบายน้ำ</td><td>อนุชา พงษ์ไพร</td><td>ผศ.ดร.วิภา ศรีสุข</td><td>12 ก.ย. 2569</td><td>วศ.301</td><td><span class="status done">สอบแล้ว</span></td></tr>
-          </tbody>
-        </table>
       </div>
 
       <div class="card" id="teacher-note-card" style="display:none;">
@@ -479,7 +481,35 @@
         </table>
         <div class="empty" id="admin-empty" style="display:none;">ไม่พบผู้ใช้ที่ตรงกับเงื่อนไข</div>
       </div>
+
+      <div class="card">
+        <h2>โครงงานทั้งหมดในระบบ</h2>
+        <table>
+          <thead>
+            <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>จำนวนสมาชิก</th><th>อาจารย์ที่ปรึกษา</th><th>วันที่ส่งข้อมูล</th><th></th></tr>
+          </thead>
+          <tbody id="admin-project-table"></tbody>
+        </table>
+        <div class="empty" id="admin-project-empty" style="display:none;">ยังไม่มีโครงงานที่ส่งเข้าระบบ</div>
+      </div>
     </main>
+  </div>
+
+  <!-- ============ PROJECT DETAIL MODAL ============ -->
+  <div id="project-modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modal-title">—</h3>
+        <button type="button" class="btn ghost small" id="modal-close">ปิด</button>
+      </div>
+      <div class="field-hint">อาจารย์ที่ปรึกษา: <strong id="modal-advisor">—</strong></div>
+      <div class="field-hint">ส่งโดยรหัสผู้ใช้งาน: <strong id="modal-submitter">—</strong></div>
+      <div class="field-hint" style="margin-bottom:14px;">วันที่ส่งข้อมูล: <strong id="modal-date">—</strong></div>
+      <table>
+        <thead><tr><th>รหัสนักศึกษา</th><th>ชื่อ-นามสกุล</th></tr></thead>
+        <tbody id="modal-members"></tbody>
+      </table>
+    </div>
   </div>
 
 </div>
@@ -487,15 +517,11 @@
 <script>
 (function(){
   const ADMIN_CODE = "ENGRU-ADMIN-2026";
+  const SEED_FLAG_KEY = "meta:seeded_v1";
 
-  // In-memory demo data (no backend — resets on page reload)
-  let users = [
-    {studentId:"6512345678", firstName:"สมชาย", lastName:"ใจดี", major:"วิศวกรรมโยธา", phone:"081-234-5678", email:"somchai@rumail.ru.ac.th", role:"นักศึกษา", password:"1234", registeredAt:"01/09/2569"},
-    {studentId:"A00123", firstName:"วิภา", lastName:"ศรีสุข", major:"วิศวกรรมพลังงาน", phone:"089-111-2222", email:"wipa@rumail.ru.ac.th", role:"อาจารย์", password:"1234", registeredAt:"28/08/2569"},
-    {studentId:"S00045", firstName:"ปิยะดา", lastName:"รักเรียน", major:"วิศวกรรมคอมพิวเตอร์", phone:"082-333-4444", email:"piyada@rumail.ru.ac.th", role:"เจ้าหน้าที่", password:"1234", registeredAt:"20/08/2569"}
-  ];
-  let currentUser = null;
+  let users = [];
   let projects = [];
+  let currentUser = null;
 
   const $ = (sel) => document.querySelector(sel);
   const screens = ["screen-login","screen-register","app-shell","admin-shell"];
@@ -513,6 +539,169 @@
     box.textContent = "";
     box.classList.remove("show");
   }
+  function setBusy(form, busy){
+    const btn = form.querySelector('button[type="submit"]');
+    if(btn){ btn.disabled = busy; }
+  }
+  function todayThaiDate(){
+    const today = new Date();
+    return String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+(today.getFullYear()+543);
+  }
+
+  // =========================================================
+  // Storage layer with automatic fallback.
+  // Uses window.storage (Claude artifact shared storage) when
+  // available. When this file is opened as a plain downloaded
+  // HTML file (window.storage does not exist there), it falls
+  // back to the browser's own localStorage so accounts and
+  // projects still persist on THIS device/browser. If even
+  // localStorage is blocked, it falls back to in-memory data
+  // for the current session so the app still works.
+  // =========================================================
+  const LS_PREFIX = "ru-eng-exam-db::";
+  function hasNativeStorage(){
+    return typeof window.storage !== "undefined" && window.storage && typeof window.storage.get === "function";
+  }
+  const memoryStore = {};
+
+  async function dbGet(key, shared){
+    if(hasNativeStorage()) return await window.storage.get(key, shared);
+    if(Object.prototype.hasOwnProperty.call(memoryStore, key)){
+      return {key, value: memoryStore[key], shared};
+    }
+    try{
+      const raw = localStorage.getItem(LS_PREFIX+key);
+      if(raw === null) throw new Error("key not found: "+key);
+      return {key, value: raw, shared};
+    }catch(err){
+      throw err;
+    }
+  }
+  async function dbSet(key, value, shared){
+    if(hasNativeStorage()) return await window.storage.set(key, value, shared);
+    try{
+      localStorage.setItem(LS_PREFIX+key, value);
+    }catch(err){
+      memoryStore[key] = value;
+    }
+    return {key, value, shared};
+  }
+  async function dbDelete(key, shared){
+    if(hasNativeStorage()) return await window.storage.delete(key, shared);
+    try{ localStorage.removeItem(LS_PREFIX+key); }catch(err){ /* ignore */ }
+    delete memoryStore[key];
+    return {key, deleted:true, shared};
+  }
+  async function dbList(prefix, shared){
+    if(hasNativeStorage()) return await window.storage.list(prefix, shared);
+    const keys = [];
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && k.startsWith(LS_PREFIX)){
+          const realKey = k.slice(LS_PREFIX.length);
+          if(!prefix || realKey.startsWith(prefix)) keys.push(realKey);
+        }
+      }
+    }catch(err){ /* ignore */ }
+    Object.keys(memoryStore).forEach(k=>{
+      if((!prefix || k.startsWith(prefix)) && keys.indexOf(k) === -1) keys.push(k);
+    });
+    return {keys, prefix, shared};
+  }
+
+  // =========================================================
+  // Persistent "database" built on top of the storage layer.
+  // When running inside Claude (window.storage available), all
+  // accounts/projects are SHARED across every visitor. When
+  // running as a standalone downloaded file, data is saved to
+  // this browser's localStorage instead (persists on reload,
+  // but only on this device).
+  // =========================================================
+  async function loadAllUsers(){
+    try{
+      const list = await dbList("users:", true);
+      if(!list || !list.keys || !list.keys.length) return [];
+      const arr = [];
+      for(const key of list.keys){
+        try{
+          const rec = await dbGet(key, true);
+          if(rec && rec.value) arr.push(JSON.parse(rec.value));
+        }catch(err){ /* skip unreadable record */ }
+      }
+      return arr;
+    }catch(err){
+      console.error("loadAllUsers error:", err);
+      return [];
+    }
+  }
+  async function saveUser(user){
+    try{
+      const res = await dbSet("users:"+user.studentId, JSON.stringify(user), true);
+      return !!res;
+    }catch(err){
+      console.error("saveUser error:", err);
+      return false;
+    }
+  }
+  async function deleteUserRecord(studentId){
+    try{
+      await dbDelete("users:"+studentId, true);
+      return true;
+    }catch(err){
+      console.error("deleteUserRecord error:", err);
+      return false;
+    }
+  }
+  async function loadAllProjects(){
+    try{
+      const list = await dbList("projects:", true);
+      if(!list || !list.keys || !list.keys.length) return [];
+      const arr = [];
+      for(const key of list.keys){
+        try{
+          const rec = await dbGet(key, true);
+          if(rec && rec.value) arr.push(JSON.parse(rec.value));
+        }catch(err){ /* skip unreadable record */ }
+      }
+      arr.sort((a,b) => (a.ts||0) - (b.ts||0));
+      return arr;
+    }catch(err){
+      console.error("loadAllProjects error:", err);
+      return [];
+    }
+  }
+  async function saveProject(project){
+    try{
+      const res = await dbSet("projects:"+project.id, JSON.stringify(project), true);
+      return !!res;
+    }catch(err){
+      console.error("saveProject error:", err);
+      return false;
+    }
+  }
+
+  async function ensureSeedData(){
+    let alreadySeeded = false;
+    try{
+      const flag = await dbGet(SEED_FLAG_KEY, true);
+      alreadySeeded = !!(flag && flag.value === "true");
+    }catch(err){
+      alreadySeeded = false; // key not found -> not seeded yet
+    }
+    if(alreadySeeded) return;
+
+    const seedUsers = [
+      {studentId:"6512345678", firstName:"สมชาย", lastName:"ใจดี", major:"วิศวกรรมโยธา", phone:"081-234-5678", email:"somchai@rumail.ru.ac.th", role:"นักศึกษา", password:"1234", registeredAt:"01/09/2569"},
+      {studentId:"A00123", firstName:"วิภา", lastName:"ศรีสุข", major:"วิศวกรรมพลังงาน", phone:"089-111-2222", email:"wipa@rumail.ru.ac.th", role:"อาจารย์", password:"1234", registeredAt:"28/08/2569"},
+      {studentId:"S00045", firstName:"ปิยะดา", lastName:"รักเรียน", major:"วิศวกรรมคอมพิวเตอร์", phone:"082-333-4444", email:"piyada@rumail.ru.ac.th", role:"เจ้าหน้าที่", password:"1234", registeredAt:"20/08/2569"}
+    ];
+    for(const u of seedUsers){ await saveUser(u); }
+    try{ await dbSet(SEED_FLAG_KEY, "true", true); }catch(err){ /* non-fatal */ }
+  }
+
+  async function refreshUsers(){ users = await loadAllUsers(); return users; }
+  async function refreshProjects(){ projects = await loadAllProjects(); return projects; }
 
   // ---- Tabs on login screen ----
   document.querySelectorAll(".tab").forEach(tab=>{
@@ -538,7 +727,7 @@
   });
 
   // ---- Register submit ----
-  $("#form-register").addEventListener("submit", (e)=>{
+  $("#form-register").addEventListener("submit", async (e)=>{
     e.preventDefault();
     clearError("err-register");
     const studentId = $("#rg-id").value.trim();
@@ -551,14 +740,6 @@
     const password = $("#rg-pass").value;
     const password2 = $("#rg-pass2").value;
 
-    if(users.some(u => u.studentId === studentId)){
-      showError("err-register","รหัสนี้ถูกลงทะเบียนไว้แล้ว");
-      return;
-    }
-    if(users.some(u => u.email === email)){
-      showError("err-register","อีเมลนี้ถูกใช้ลงทะเบียนไว้แล้ว");
-      return;
-    }
     if(!email.toLowerCase().endsWith("@rumail.ru.ac.th")){
       showError("err-register","กรุณาใช้อีเมลมหาวิทยาลัย รูปแบบ name@rumail.ru.ac.th");
       return;
@@ -572,10 +753,27 @@
       return;
     }
 
-    const today = new Date();
-    const registeredAt = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+(today.getFullYear()+543);
+    setBusy(e.target, true);
+    await refreshUsers(); // check against the latest shared data before writing
+    if(users.some(u => u.studentId === studentId)){
+      showError("err-register","รหัสนี้ถูกลงทะเบียนไว้แล้ว");
+      setBusy(e.target, false);
+      return;
+    }
+    if(users.some(u => u.email === email)){
+      showError("err-register","อีเมลนี้ถูกใช้ลงทะเบียนไว้แล้ว");
+      setBusy(e.target, false);
+      return;
+    }
 
-    users.push({studentId, firstName, lastName, major, phone, email, role, password, registeredAt});
+    const newUser = {studentId, firstName, lastName, major, phone, email, role, password, registeredAt: todayThaiDate()};
+    const ok = await saveUser(newUser);
+    setBusy(e.target, false);
+    if(!ok){
+      showError("err-register","บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      return;
+    }
+    users.push(newUser);
     e.target.reset();
     document.querySelectorAll("#rg-role-group .role-option").forEach((o,i)=>o.classList.toggle("checked", i===0));
     showScreen("screen-login");
@@ -584,22 +782,27 @@
   });
 
   // ---- User login submit ----
-  $("#form-login-user").addEventListener("submit",(e)=>{
+  $("#form-login-user").addEventListener("submit", async (e)=>{
     e.preventDefault();
     clearError("err-login-user");
     const idOrEmail = $("#li-id").value.trim();
     const pass = $("#li-pass").value;
+
+    setBusy(e.target, true);
+    await refreshUsers(); // pull the latest shared data before checking credentials
+    setBusy(e.target, false);
+
     const user = users.find(u => (u.studentId === idOrEmail || u.email === idOrEmail) && u.password === pass);
     if(!user){
       showError("err-login-user","รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง");
       return;
     }
     currentUser = user;
-    enterDashboard(user);
+    await enterDashboard(user);
   });
 
   // ---- Admin login submit ----
-  $("#form-login-admin").addEventListener("submit",(e)=>{
+  $("#form-login-admin").addEventListener("submit", async (e)=>{
     e.preventDefault();
     clearError("err-login-admin");
     const code = $("#li-admin-code").value;
@@ -608,11 +811,16 @@
       return;
     }
     e.target.reset();
+    setBusy(e.target, true);
+    await refreshUsers();
+    await refreshProjects();
+    setBusy(e.target, false);
     renderAdminTable();
+    renderAdminProjectTable();
     showScreen("admin-shell");
   });
 
-  function enterDashboard(user){
+  async function enterDashboard(user){
     $("#chip-name").textContent = user.firstName+" "+user.lastName;
     $("#chip-role").textContent = user.role+" · "+user.major;
     $("#dash-hello").textContent = "สวัสดี คุณ"+user.firstName;
@@ -620,6 +828,7 @@
       ? "ภาพรวมกำหนดการสอบโครงงานของคุณ สาขา"+user.major
       : "ภาพรวมกำหนดการสอบโครงงานที่เกี่ยวข้องกับคุณ";
     $("#teacher-note-card").style.display = (user.role === "อาจารย์") ? "block" : "none";
+    await refreshProjects();
     renderProjectTable();
     showScreen("app-shell");
   }
@@ -633,7 +842,7 @@
     document.querySelector('.tab[data-tab="user"]').click();
   });
 
-  // ---- Admin table ----
+  // ---- Admin: users table ----
   function renderAdminTable(){
     const q = ($("#admin-search")?.value || "").trim().toLowerCase();
     const roleFilter = $("#admin-filter-role")?.value || "";
@@ -645,8 +854,7 @@
 
     const tbody = $("#admin-user-table");
     tbody.innerHTML = "";
-    filtered.forEach((u, idx)=>{
-      const realIdx = users.indexOf(u);
+    filtered.forEach(u=>{
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${u.studentId}</td>
@@ -656,16 +864,17 @@
         <td>${u.phone}</td>
         <td>${u.email}</td>
         <td>${u.registeredAt}</td>
-        <td><button class="btn danger small" data-remove="${realIdx}">ลบ</button></td>
+        <td><button class="btn danger small" data-remove="${u.studentId}">ลบ</button></td>
       `;
       tbody.appendChild(tr);
     });
     $("#admin-empty").style.display = filtered.length ? "none" : "block";
 
     tbody.querySelectorAll("[data-remove]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const i = Number(btn.dataset.remove);
-        users.splice(i,1);
+      btn.addEventListener("click", async ()=>{
+        btn.disabled = true;
+        await deleteUserRecord(btn.dataset.remove);
+        await refreshUsers();
         renderAdminTable();
       });
     });
@@ -677,6 +886,28 @@
   }
   $("#admin-search").addEventListener("input", renderAdminTable);
   $("#admin-filter-role").addEventListener("change", renderAdminTable);
+
+  // ---- Admin: all projects table ----
+  function renderAdminProjectTable(){
+    const tbody = $("#admin-project-table");
+    tbody.innerHTML = "";
+    projects.forEach(p=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.submittedById}</td>
+        <td>${p.title}</td>
+        <td>${p.members.length}</td>
+        <td>${p.advisor}</td>
+        <td>${p.submittedAt}</td>
+        <td><button type="button" class="link-btn" data-view="${p.id}">ดูรายละเอียด</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    $("#admin-project-empty").style.display = projects.length ? "none" : "block";
+    tbody.querySelectorAll("[data-view]").forEach(btn=>{
+      btn.addEventListener("click", ()=> openProjectModal(btn.dataset.view));
+    });
+  }
 
   // ---- Project members (min 3, max 5) ----
   function getMemberRowCount(){ return document.querySelectorAll("#member-rows .member-row").length; }
@@ -714,19 +945,53 @@
   });
   $("#btn-add-member").addEventListener("click", ()=> addMemberRow(true));
 
+  // ---- Dashboard: project schedule table (real submitted data) ----
   function renderProjectTable(){
     const tbody = $("#project-table");
     tbody.innerHTML = "";
     projects.forEach(p=>{
-      const memberList = p.members.map(m => `${m.name} (${m.id})`).join(", ");
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${p.title}</td><td>${memberList}</td><td>${p.advisor}</td><td>${p.submittedBy}</td><td>${p.submittedAt}</td>`;
+      tr.innerHTML = `
+        <td>${p.submittedById}</td>
+        <td>${p.title}</td>
+        <td>${p.members.length}</td>
+        <td>${p.advisor}</td>
+        <td>${p.submittedAt}</td>
+        <td><button type="button" class="link-btn" data-view="${p.id}">ดูรายละเอียด</button></td>
+      `;
       tbody.appendChild(tr);
     });
     $("#project-empty").style.display = projects.length ? "none" : "block";
+    tbody.querySelectorAll("[data-view]").forEach(btn=>{
+      btn.addEventListener("click", ()=> openProjectModal(btn.dataset.view));
+    });
   }
 
-  $("#form-project").addEventListener("submit",(e)=>{
+  // ---- Project detail modal (shared by dashboard + admin) ----
+  function openProjectModal(projectId){
+    const p = projects.find(pr => pr.id === projectId);
+    if(!p) return;
+    $("#modal-title").textContent = p.title;
+    $("#modal-advisor").textContent = p.advisor;
+    $("#modal-submitter").textContent = p.submittedById + " (" + p.submittedByName + ")";
+    $("#modal-date").textContent = p.submittedAt;
+    const mtbody = $("#modal-members");
+    mtbody.innerHTML = "";
+    p.members.forEach(m=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${m.id}</td><td>${m.name}</td>`;
+      mtbody.appendChild(tr);
+    });
+    $("#project-modal-overlay").classList.add("show");
+  }
+  function closeProjectModal(){ $("#project-modal-overlay").classList.remove("show"); }
+  $("#modal-close").addEventListener("click", closeProjectModal);
+  $("#project-modal-overlay").addEventListener("click",(e)=>{
+    if(e.target.id === "project-modal-overlay") closeProjectModal();
+  });
+
+  // ---- Project submission ----
+  $("#form-project").addEventListener("submit", async (e)=>{
     e.preventDefault();
     clearError("err-project");
     const title = $("#pj-title").value.trim();
@@ -742,22 +1007,42 @@
     if(members.length < 3){ showError("err-project","กรุณากรอกรหัสนักศึกษาและชื่อ-นามสกุลของสมาชิกอย่างน้อย 3 คน"); return; }
     if(!advisor){ showError("err-project","กรุณากรอกชื่ออาจารย์ที่ปรึกษาโครงงาน"); return; }
 
-    const today = new Date();
-    const submittedAt = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+(today.getFullYear()+543);
-    projects.push({
+    setBusy(e.target, true);
+    const project = {
+      id: "p_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
       title, members, advisor,
-      submittedBy: currentUser ? (currentUser.firstName+" "+currentUser.lastName) : "-",
-      submittedAt
-    });
+      submittedById: currentUser ? currentUser.studentId : "-",
+      submittedByName: currentUser ? (currentUser.firstName+" "+currentUser.lastName) : "-",
+      submittedAt: todayThaiDate(),
+      ts: Date.now()
+    };
+    const ok = await saveProject(project);
+    setBusy(e.target, false);
+    if(!ok){
+      showError("err-project","บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      return;
+    }
+    projects.push(project);
     e.target.reset();
     resetMemberRows();
     renderProjectTable();
   });
 
+  // ---- Boot ----
   resetMemberRows();
-  renderProjectTable();
-
   showScreen("screen-login");
+
+  (async function init(){
+    try{
+      await ensureSeedData();
+      await refreshUsers();
+      await refreshProjects();
+      $("#storage-status").textContent = "เชื่อมต่อฐานข้อมูลสำเร็จ — บัญชีและข้อมูลโครงงานทั้งหมดถูกเก็บไว้ถาวร";
+    }catch(err){
+      console.error("init error:", err);
+      $("#storage-status").textContent = "เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง";
+    }
+  })();
 })();
 </script>
 </body>
