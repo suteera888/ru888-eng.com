@@ -536,10 +536,30 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
+  // =========================================================
+  // SUPABASE CONFIG — แก้ 2 บรรทัดนี้หลังสร้างโปรเจกต์ Supabase แล้ว
+  // หา URL/Anon key ได้ที่: Project Settings -> API
+  // ถ้ายังไม่ตั้งค่า (ปล่อยเป็นค่าเริ่มต้น) แอปจะสลับไปทำงานแบบ
+  // เก็บข้อมูลในเครื่องนี้เท่านั้น (โหมดเดิม) โดยอัตโนมัติ
+  // =========================================================
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
   const ADMIN_CODE = "ENGRU-ADMIN-2026";
   const SEED_FLAG_KEY = "meta:seeded_v1";
+
+  function isSupabaseConfigured(){
+    return typeof SUPABASE_URL === "string" && SUPABASE_URL.indexOf("http") === 0 &&
+           typeof SUPABASE_ANON_KEY === "string" && SUPABASE_ANON_KEY.length > 20;
+  }
+  let sb = null;
+  if(isSupabaseConfigured() && window.supabase && typeof window.supabase.createClient === "function"){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  function usingSupabase(){ return !!sb; }
 
   let users = [];
   let projects = [];
@@ -704,6 +724,7 @@
   }
 
   async function ensureSeedData(){
+    if(usingSupabase()) return; // seed demo accounts only apply to the local fallback mode
     let alreadySeeded = false;
     try{
       const flag = await dbGet(SEED_FLAG_KEY, true);
@@ -722,8 +743,104 @@
     try{ await dbSet(SEED_FLAG_KEY, "true", true); }catch(err){ /* non-fatal */ }
   }
 
-  async function refreshUsers(){ users = await loadAllUsers(); return users; }
-  async function refreshProjects(){ projects = await loadAllProjects(); return projects; }
+  // =========================================================
+  // Supabase-backed data layer (used automatically instead of
+  // the local fallback above whenever SUPABASE_URL/ANON_KEY are
+  // filled in at the top of this script).
+  // =========================================================
+  async function sbLoadAllUsers(){
+    try{
+      const { data, error } = await sb.from("profiles").select("*").order("registered_at", { ascending:true });
+      if(error) throw error;
+      return (data||[]).map(row => ({
+        id: row.id, studentId: row.student_id, firstName: row.first_name, lastName: row.last_name,
+        major: row.major, phone: row.phone, email: row.email, role: row.role,
+        registeredAt: new Date(row.registered_at).toLocaleDateString("th-TH")
+      }));
+    }catch(err){ console.error("sbLoadAllUsers error:", err); return []; }
+  }
+  async function sbFindEmailByStudentId(studentId){
+    try{
+      const { data, error } = await sb.from("profiles").select("email").eq("student_id", studentId).maybeSingle();
+      if(error) throw error;
+      return data ? data.email : null;
+    }catch(err){ return null; }
+  }
+  async function sbRegisterUser(payload){
+    try{
+      const { data, error } = await sb.auth.signUp({ email: payload.email, password: payload.password });
+      if(error) return { ok:false, message: error.message };
+      const uid = data.user ? data.user.id : (data.session ? data.session.user.id : null);
+      if(!uid){
+        return { ok:false, message:"สมัครสำเร็จแต่ต้องยืนยันอีเมลก่อนใช้งาน กรุณาปิด \"Confirm email\" ใน Supabase Authentication settings สำหรับการทดสอบ" };
+      }
+      const { error: insertErr } = await sb.from("profiles").insert({
+        id: uid, student_id: payload.studentId, first_name: payload.firstName, last_name: payload.lastName,
+        major: payload.major, phone: payload.phone, email: payload.email, role: payload.role
+      });
+      if(insertErr) return { ok:false, message: insertErr.message };
+      return { ok:true };
+    }catch(err){ return { ok:false, message: (err && err.message) || "เกิดข้อผิดพลาดในการสมัครสมาชิก" }; }
+  }
+  async function sbLoginUser(idOrEmail, password){
+    try{
+      let email = idOrEmail;
+      if(idOrEmail.indexOf("@") === -1){
+        const found = await sbFindEmailByStudentId(idOrEmail);
+        if(!found) return { ok:false, message:"รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง" };
+        email = found;
+      }
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) return { ok:false, message:"รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง" };
+      const { data: profile, error: profErr } = await sb.from("profiles").select("*").eq("id", data.user.id).maybeSingle();
+      if(profErr || !profile) return { ok:false, message:"เข้าสู่ระบบสำเร็จ แต่ไม่พบข้อมูลโปรไฟล์ของบัญชีนี้" };
+      return { ok:true, user:{
+        id: profile.id, studentId: profile.student_id, firstName: profile.first_name, lastName: profile.last_name,
+        major: profile.major, phone: profile.phone, email: profile.email, role: profile.role,
+        registeredAt: new Date(profile.registered_at).toLocaleDateString("th-TH")
+      }};
+    }catch(err){ return { ok:false, message:(err && err.message) || "เข้าสู่ระบบไม่สำเร็จ" }; }
+  }
+  async function sbDeleteUser(studentId){
+    try{
+      const { error } = await sb.from("profiles").delete().eq("student_id", studentId);
+      if(error) throw error;
+      return true;
+    }catch(err){ console.error("sbDeleteUser error:", err); return false; }
+  }
+  async function sbLoadAllProjects(){
+    try{
+      const { data, error } = await sb.from("projects").select("*").order("submitted_at", { ascending:true });
+      if(error) throw error;
+      return (data||[]).map(row => ({
+        id: row.id, title: row.title, advisor: row.advisor, members: row.members || [],
+        submittedById: row.submitted_by_student_id, submittedByName: row.submitted_by_name,
+        submittedAt: new Date(row.submitted_at).toLocaleDateString("th-TH"),
+        ts: new Date(row.submitted_at).getTime()
+      }));
+    }catch(err){ console.error("sbLoadAllProjects error:", err); return []; }
+  }
+  async function sbSaveProject(project){
+    try{
+      const { data: authData } = await sb.auth.getUser();
+      const uid = authData && authData.user ? authData.user.id : null;
+      const { error } = await sb.from("projects").insert({
+        title: project.title, advisor: project.advisor, members: project.members,
+        submitted_by: uid, submitted_by_student_id: project.submittedById, submitted_by_name: project.submittedByName
+      });
+      if(error) throw error;
+      return true;
+    }catch(err){ console.error("sbSaveProject error:", err); return false; }
+  }
+
+  async function refreshUsers(){
+    users = usingSupabase() ? await sbLoadAllUsers() : await loadAllUsers();
+    return users;
+  }
+  async function refreshProjects(){
+    projects = usingSupabase() ? await sbLoadAllProjects() : await loadAllProjects();
+    return projects;
+  }
 
   // ---- Show/hide password toggles ----
   document.querySelectorAll(".toggle-pass").forEach(btn=>{
@@ -791,6 +908,22 @@
     }
 
     setBusy(e.target, true);
+
+    if(usingSupabase()){
+      const result = await sbRegisterUser({studentId, firstName, lastName, major, phone, email, role, password});
+      setBusy(e.target, false);
+      if(!result.ok){
+        showError("err-register", result.message || "สมัครสมาชิกไม่สำเร็จ");
+        return;
+      }
+      e.target.reset();
+      document.querySelectorAll("#rg-role-group .role-option").forEach((o,i)=>o.classList.toggle("checked", i===0));
+      showScreen("screen-login");
+      document.querySelector('.tab[data-tab="user"]').click();
+      $("#li-id").value = studentId;
+      return;
+    }
+
     await refreshUsers(); // check against the latest shared data before writing
     if(users.some(u => u.studentId === studentId)){
       showError("err-register","รหัสนี้ถูกลงทะเบียนไว้แล้ว");
@@ -826,6 +959,19 @@
     const pass = $("#li-pass").value;
 
     setBusy(e.target, true);
+
+    if(usingSupabase()){
+      const result = await sbLoginUser(idOrEmail, pass);
+      setBusy(e.target, false);
+      if(!result.ok){
+        showError("err-login-user", result.message || "รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง");
+        return;
+      }
+      currentUser = result.user;
+      await enterDashboard(result.user);
+      return;
+    }
+
     await refreshUsers(); // pull the latest shared data before checking credentials
     setBusy(e.target, false);
 
@@ -910,7 +1056,7 @@
     tbody.querySelectorAll("[data-remove]").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         btn.disabled = true;
-        await deleteUserRecord(btn.dataset.remove);
+        await (usingSupabase() ? sbDeleteUser(btn.dataset.remove) : deleteUserRecord(btn.dataset.remove));
         await refreshUsers();
         renderAdminTable();
       });
@@ -1053,7 +1199,7 @@
       submittedAt: todayThaiDate(),
       ts: Date.now()
     };
-    const ok = await saveProject(project);
+    const ok = usingSupabase() ? await sbSaveProject(project) : await saveProject(project);
     setBusy(e.target, false);
     if(!ok){
       showError("err-project","บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
@@ -1074,9 +1220,11 @@
       await ensureSeedData();
       await refreshUsers();
       await refreshProjects();
-      $("#storage-status").textContent = hasNativeStorage()
-        ? "เชื่อมต่อฐานข้อมูลกลางสำเร็จ — ทุกเครื่องที่เปิดผ่านลิงก์นี้เห็นข้อมูลเดียวกัน"
-        : "หมายเหตุ: เปิดเป็นไฟล์ในเครื่องนี้ ข้อมูลจะบันทึกเฉพาะเบราว์เซอร์นี้ ไม่ share ไปเครื่องอื่น";
+      $("#storage-status").textContent = usingSupabase()
+        ? "เชื่อมต่อฐานข้อมูล Supabase สำเร็จ — ทุกเครื่องที่เปิดผ่านลิงก์นี้บันทึก/เห็นข้อมูลเดียวกันจริง"
+        : (hasNativeStorage()
+            ? "เชื่อมต่อฐานข้อมูลกลางสำเร็จ — ทุกเครื่องที่เปิดผ่านลิงก์นี้เห็นข้อมูลเดียวกัน"
+            : "หมายเหตุ: ยังไม่ได้ตั้งค่า Supabase และเปิดเป็นไฟล์ในเครื่องนี้ ข้อมูลจะบันทึกเฉพาะเบราว์เซอร์นี้ ไม่ share ไปเครื่องอื่น");
     }catch(err){
       console.error("init error:", err);
       $("#storage-status").textContent = "เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง";
