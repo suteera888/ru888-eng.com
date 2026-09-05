@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบสอบโครงงาน · คณะวิศวกรรมศาสตร์ ม.รามคำแหง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1EF;
+    --panel:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#586173;
+    --accent:#CB5A1E;
+    --accent-soft:#F1D9C8;
+    --blue:#2C4A6E;
+    --blue-soft:#DCE4EC;
+    --line:rgba(44,74,110,0.16);
+    --line-soft:rgba(44,74,110,0.08);
+    --green:#3A7D5C;
+    --red:#B23A3A;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Sarabun',sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    min-height:100vh;
+    position:relative;
+  }
+  h1,h2,h3,.brand-title,button,.tab{font-family:'IBM Plex Sans Thai',sans-serif;}
+
+  .grid-bg{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size:32px 32px;
+  }
+  #app{position:relative;z-index:1;min-height:100vh;}
+
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- Auth screens ---------- */
+  .auth-wrap{
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:40px 20px;
+  }
+  .auth-frame{
+    position:relative;
+    padding:22px;
+  }
+  .auth-frame::before, .auth-frame::after,
+  .auth-frame .tick-tl, .auth-frame .tick-tr, .auth-frame .tick-bl, .auth-frame .tick-br{
+    content:"";position:absolute;width:18px;height:18px;
+    border-color:var(--blue);
+  }
+  .tick-tl{top:0;left:0;border-top:2px solid var(--blue);border-left:2px solid var(--blue);}
+  .tick-tr{top:0;right:0;border-top:2px solid var(--blue);border-right:2px solid var(--blue);}
+  .tick-bl{bottom:0;left:0;border-bottom:2px solid var(--blue);border-left:2px solid var(--blue);}
+  .tick-br{bottom:0;right:0;border-bottom:2px solid var(--blue);border-right:2px solid var(--blue);}
+
+  .auth-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    width:400px;
+    max-width:100%;
+    padding:34px 32px 30px;
+  }
+  .register-card{width:560px;}
+
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .brand svg{flex-shrink:0;}
+  .brand-title{font-size:15px;font-weight:600;line-height:1.35;color:var(--ink);}
+  .brand-title small{display:block;font-weight:400;font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+
+  .tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:22px;}
+  .tab{
+    flex:1;background:none;border:none;padding:10px 4px 12px;
+    font-size:14.5px;color:var(--ink-soft);cursor:pointer;
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+  }
+  .tab.active{color:var(--blue);border-bottom-color:var(--accent);font-weight:600;}
+
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;}
+  .field input, .field select{
+    width:100%;padding:10px 12px;font-size:14.5px;font-family:'Sarabun',sans-serif;
+    border:1px solid var(--line);border-radius:var(--radius);
+    background:#fff;color:var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);
+  }
+  .field-hint{font-size:12px;color:var(--ink-soft);margin-top:5px;}
+
+  .role-group{display:flex;gap:8px;}
+  .role-option{
+    flex:1;border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 6px;text-align:center;font-size:13.5px;cursor:pointer;color:var(--ink-soft);
+  }
+  .role-option input{display:none;}
+  .role-option.checked{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);font-weight:600;}
+
+  .form-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+  .btn{
+    display:inline-block;width:100%;padding:11px 14px;font-size:15px;font-weight:600;
+    background:var(--blue);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;
+  }
+  .btn:hover{background:#233c58;}
+  .btn.accent{background:var(--accent);}
+  .btn.accent:hover{background:#b04d17;}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--ink);}
+  .btn.ghost:hover{border-color:var(--blue);color:var(--blue);}
+  .btn.small{width:auto;padding:7px 12px;font-size:13px;}
+  .btn.danger{background:var(--red);}
+
+  .error-box{
+    background:#FBEAEA;border:1px solid var(--red);color:var(--red);
+    font-size:13px;padding:9px 12px;border-radius:var(--radius);margin-bottom:16px;display:none;
+  }
+  .error-box.show{display:block;}
+
+  .switch-line{text-align:center;font-size:13.5px;color:var(--ink-soft);margin-top:18px;}
+  .switch-line a{color:var(--blue);cursor:pointer;text-decoration:none;font-weight:600;}
+  .switch-line a:hover{text-decoration:underline;}
+
+  .divider{border:none;border-top:1px solid var(--line);margin:22px 0;}
+  .section-label{font-size:12.5px;color:var(--blue);font-weight:600;margin-bottom:14px;letter-spacing:.2px;}
+
+  /* ---------- App shell ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 28px;background:var(--panel);border-bottom:1px solid var(--line);
+  }
+  .topbar .brand{margin:0;}
+  .topbar-right{display:flex;align-items:center;gap:14px;}
+  .user-chip{font-size:13.5px;text-align:right;line-height:1.3;}
+  .user-chip .name{font-weight:600;}
+  .user-chip .role{color:var(--ink-soft);font-size:12px;}
+  .topbar.admin{background:var(--blue);border-bottom-color:var(--blue);}
+  .topbar.admin .brand-title, .topbar.admin .brand-title small{color:#fff;}
+  .topbar.admin .user-chip .name, .topbar.admin .user-chip .role{color:#fff;}
+
+  main{max-width:1080px;margin:0 auto;padding:32px 28px 60px;}
+
+  .banner{
+    background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);
+    padding:20px 24px;margin-bottom:26px;
+  }
+  .banner h1{font-size:19px;margin:0 0 4px;}
+  .banner p{margin:0;font-size:14px;color:var(--ink-soft);}
+
+  .card{background:var(--panel);border:1px solid var(--line);padding:22px 24px;margin-bottom:22px;}
+  .card h2{font-size:15.5px;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line);}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{
+    text-align:left;font-weight:600;color:var(--ink-soft);font-size:12.5px;
+    padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  td{padding:11px 10px;border-bottom:1px solid var(--line-soft);}
+  tr:last-child td{border-bottom:none;}
+  .status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600;}
+  .status.scheduled{background:var(--blue-soft);color:var(--blue);}
+  .status.done{background:#DDEFE4;color:var(--green);}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;}
+  .stat-card{background:var(--panel);border:1px solid var(--line);padding:18px 20px;}
+  .stat-card .num{font-size:26px;font-weight:700;color:var(--blue);}
+  .stat-card .label{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+
+  .toolbar{display:flex;gap:12px;margin-bottom:16px;}
+  .toolbar input, .toolbar select{
+    padding:9px 12px;font-size:13.5px;border:1px solid var(--line);border-radius:var(--radius);
+    font-family:'Sarabun',sans-serif;
+  }
+  .toolbar input{flex:1;}
+
+  .empty{padding:30px 10px;text-align:center;color:var(--ink-soft);font-size:13.5px;}
+
+  .member-row{display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:end;margin-bottom:12px;}
+  .member-row .remove-member{width:auto;padding:10px 14px;height:fit-content;}
+  #btn-add-member{margin-bottom:20px;}
+  #btn-add-member:disabled{cursor:not-allowed;}
+
+  @media (max-width:640px){
+    .member-row{grid-template-columns:1fr;}
+  }
+
+  @media (max-width:640px){
+    .register-card{width:100%;padding:26px 20px;}
+    .form-row2{grid-template-columns:1fr;}
+    .role-group{flex-direction:column;}
+    main{padding:24px 16px 40px;}
+    .stats{grid-template-columns:1fr 1fr;}
+    .topbar{padding:12px 16px;flex-wrap:wrap;gap:10px;}
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div id="app">
+
+  <!-- ============ LOGIN ============ -->
+  <section id="screen-login" class="screen active">
+    <div class="auth-wrap">
+      <div class="auth-frame">
+        <span class="tick-tl"></span><span class="tick-tr"></span><span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="auth-card">
+          <div class="brand">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+              <circle cx="17" cy="17" r="15.5" stroke="#2C4A6E" stroke-width="1.6"/>
+              <path d="M17 4 V10 M17 24 V30 M4 17 H10 M24 17 H30" stroke="#2C4A6E" stroke-width="1.6"/>
+              <circle cx="17" cy="17" r="6" fill="#CB5A1E"/>
+            </svg>
+            <div class="brand-title">คณะวิศวกรรมศาสตร์ มหาวิทยาลัยรามคำแหง
+              <small>ระบบสอบโครงงานนักศึกษา</small>
+            </div>
+          </div>
+
+          <div class="tabs">
+            <button type="button" class="tab active" data-tab="user">เข้าสู่ระบบ</button>
+            <button type="button" class="tab" data-tab="admin">ผู้ดูแลระบบ</button>
+          </div>
+
+          <form id="form-login-user" class="tab-panel active">
+            <div class="error-box" id="err-login-user"></div>
+            <div class="field">
+              <label for="li-id">รหัสนักศึกษา / อีเมล</label>
+              <input type="text" id="li-id" placeholder="เช่น 6512345678 หรือ name@rumail.ru.ac.th" required>
+            </div>
+            <div class="field">
+              <label for="li-pass">รหัสผ่าน</label>
+              <input type="password" id="li-pass" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn accent">เข้าสู่ระบบ</button>
+            <div class="switch-line">ยังไม่มีบัญชี? <a id="go-register">ลงทะเบียนใช้งาน</a></div>
+          </form>
+
+          <form id="form-login-admin" class="tab-panel">
+            <div class="error-box" id="err-login-admin"></div>
+            <div class="field">
+              <label for="li-admin-code">รหัสผู้ดูแลระบบ</label>
+              <input type="password" id="li-admin-code" placeholder="กรอกรหัสแอดมิน" required>
+            </div>
+            <div class="field-hint" style="margin-bottom:16px;">สำหรับเจ้าหน้าที่ผู้ดูแลเว็บไซต์เท่านั้น</div>
+            <button type="submit" class="btn">เข้าสู่ระบบผู้ดูแล</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REGISTER ============ -->
+  <section id="screen-register" class="screen">
+    <div class="auth-wrap">
+      <div class="auth-frame">
+        <span class="tick-tl"></span><span class="tick-tr"></span><span class="tick-bl"></span><span class="tick-br"></span>
+        <div class="auth-card register-card">
+          <div class="brand">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+              <circle cx="17" cy="17" r="15.5" stroke="#2C4A6E" stroke-width="1.6"/>
+              <path d="M17 4 V10 M17 24 V30 M4 17 H10 M24 17 H30" stroke="#2C4A6E" stroke-width="1.6"/>
+              <circle cx="17" cy="17" r="6" fill="#CB5A1E"/>
+            </svg>
+            <div class="brand-title">ลงทะเบียนใช้งานระบบ
+              <small>คณะวิศวกรรมศาสตร์ มหาวิทยาลัยรามคำแหง</small>
+            </div>
+          </div>
+
+          <form id="form-register">
+            <div class="error-box" id="err-register"></div>
+
+            <div class="section-label">ข้อมูลผู้ใช้</div>
+            <div class="form-row2">
+              <div class="field">
+                <label for="rg-id">รหัสนักศึกษา / รหัสประจำตัว</label>
+                <input type="text" id="rg-id" placeholder="เช่น 6512345678" required>
+              </div>
+              <div class="field">
+                <label for="rg-major">สาขาที่เรียน / สังกัด</label>
+                <select id="rg-major" required>
+                  <option value="" disabled selected>เลือกสาขาวิชา</option>
+                  <option>วิศวกรรมโยธา</option>
+                  <option>วิศวกรรมอุตสาหการ</option>
+                  <option>วิศวกรรมสิ่งแวดล้อมและความปลอดภัย</option>
+                  <option>วิศวกรรมคอมพิวเตอร์</option>
+                  <option>วิศวกรรมพลังงาน</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row2">
+              <div class="field">
+                <label for="rg-fname">ชื่อ</label>
+                <input type="text" id="rg-fname" required>
+              </div>
+              <div class="field">
+                <label for="rg-lname">นามสกุล</label>
+                <input type="text" id="rg-lname" required>
+              </div>
+            </div>
+
+            <div class="section-label">ข้อมูลติดต่อ</div>
+            <div class="form-row2">
+              <div class="field">
+                <label for="rg-phone">เบอร์โทรศัพท์</label>
+                <input type="tel" id="rg-phone" placeholder="08X-XXX-XXXX" required>
+              </div>
+              <div class="field">
+                <label for="rg-email">อีเมล</label>
+                <input type="email" id="rg-email" placeholder="name@rumail.ru.ac.th" required>
+              </div>
+            </div>
+
+            <div class="section-label">บทบาทผู้ใช้งาน</div>
+            <div class="field">
+              <div class="role-group" id="rg-role-group">
+                <label class="role-option checked" data-role="นักศึกษา">
+                  <input type="radio" name="rg-role" value="นักศึกษา" checked>นักศึกษา
+                </label>
+                <label class="role-option" data-role="อาจารย์">
+                  <input type="radio" name="rg-role" value="อาจารย์">อาจารย์
+                </label>
+                <label class="role-option" data-role="เจ้าหน้าที่">
+                  <input type="radio" name="rg-role" value="เจ้าหน้าที่">เจ้าหน้าที่
+                </label>
+              </div>
+            </div>
+
+            <div class="section-label">ตั้งรหัสผ่าน</div>
+            <div class="form-row2">
+              <div class="field">
+                <label for="rg-pass">รหัสผ่าน</label>
+                <input type="password" id="rg-pass" required>
+              </div>
+              <div class="field">
+                <label for="rg-pass2">ยืนยันรหัสผ่าน</label>
+                <input type="password" id="rg-pass2" required>
+              </div>
+            </div>
+
+            <button type="submit" class="btn accent">ลงทะเบียน</button>
+            <div class="switch-line">มีบัญชีอยู่แล้ว? <a id="go-login">เข้าสู่ระบบ</a></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ USER APP SHELL ============ -->
+  <div id="app-shell" class="screen">
+    <header class="topbar">
+      <div class="brand">
+        <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
+          <circle cx="17" cy="17" r="15.5" stroke="#2C4A6E" stroke-width="1.6"/>
+          <path d="M17 4 V10 M17 24 V30 M4 17 H10 M24 17 H30" stroke="#2C4A6E" stroke-width="1.6"/>
+          <circle cx="17" cy="17" r="6" fill="#CB5A1E"/>
+        </svg>
+        <div class="brand-title">ระบบสอบโครงงาน<small>คณะวิศวกรรมศาสตร์ ม.รามคำแหง</small></div>
+      </div>
+      <div class="topbar-right">
+        <div class="user-chip">
+          <div class="name" id="chip-name">—</div>
+          <div class="role" id="chip-role">—</div>
+        </div>
+        <button class="btn ghost small" id="btn-logout">ออกจากระบบ</button>
+      </div>
+    </header>
+    <main>
+      <div class="banner">
+        <h1 id="dash-hello">สวัสดี</h1>
+        <p id="dash-sub">ภาพรวมการสอบโครงงานของคุณ</p>
+      </div>
+
+      <div class="card" id="project-card">
+        <h2>ข้อมูลโครงงานที่จะสอบ</h2>
+        <form id="form-project">
+          <div class="error-box" id="err-project"></div>
+          <div class="field">
+            <label for="pj-title">ชื่อเรื่องโครงงาน</label>
+            <input type="text" id="pj-title" placeholder="เช่น ระบบตรวจจับรอยร้าวคอนกรีตด้วยภาพถ่าย" required>
+          </div>
+
+          <div class="section-label">สมาชิกในกลุ่ม (กรอกอย่างน้อย 3 คน สูงสุด 5 คน)</div>
+          <div id="member-rows"></div>
+          <button type="button" class="btn ghost small" id="btn-add-member">+ เพิ่มสมาชิก</button>
+
+          <div class="section-label">อาจารย์ที่ปรึกษาโครงงาน</div>
+          <div class="field">
+            <label for="pj-advisor">ชื่อ-นามสกุลอาจารย์ที่ปรึกษา</label>
+            <input type="text" id="pj-advisor" placeholder="เช่น ผศ.ดร.วิภา ศรีสุข" required>
+          </div>
+
+          <button type="submit" class="btn accent" style="width:auto;padding:11px 24px;">บันทึกข้อมูลโครงงาน</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>รายการโครงงานที่ส่งเข้าสอบ</h2>
+        <table>
+          <thead>
+            <tr><th>ชื่อเรื่องโครงงาน</th><th>สมาชิก</th><th>อาจารย์ที่ปรึกษา</th><th>ผู้ส่งข้อมูล</th><th>วันที่ส่ง</th></tr>
+          </thead>
+          <tbody id="project-table"></tbody>
+        </table>
+        <div class="empty" id="project-empty">ยังไม่มีโครงงานที่ส่งเข้าระบบ</div>
+      </div>
+
+      <div class="card">
+        <h2>ตารางสอบโครงงาน</h2>
+        <table>
+          <thead>
+            <tr><th>ชื่อโครงงาน</th><th>นักศึกษา</th><th>อาจารย์ที่ปรึกษา</th><th>วันที่สอบ</th><th>ห้อง</th><th>สถานะ</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>ระบบตรวจจับรอยร้าวคอนกรีตด้วยภาพถ่าย</td><td>สมชาย ใจดี</td><td>ผศ.ดร.วิภา ศรีสุข</td><td>18 ก.ย. 2569</td><td>วศ.301</td><td><span class="status scheduled">รอสอบ</span></td></tr>
+            <tr><td>ระบบควบคุมพลังงานแผงโซลาร์อัจฉริยะ</td><td>สุดา แสงทอง</td><td>ดร.ประพันธ์ ทองแท้</td><td>19 ก.ย. 2569</td><td>วศ.204</td><td><span class="status scheduled">รอสอบ</span></td></tr>
+            <tr><td>หุ่นยนต์ตรวจสอบท่อระบายน้ำ</td><td>อนุชา พงษ์ไพร</td><td>ผศ.ดร.วิภา ศรีสุข</td><td>12 ก.ย. 2569</td><td>วศ.301</td><td><span class="status done">สอบแล้ว</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" id="teacher-note-card" style="display:none;">
+        <h2>สำหรับอาจารย์ที่ปรึกษา</h2>
+        <p style="margin:0;font-size:13.5px;color:var(--ink-soft);">คุณสามารถตรวจสอบกำหนดการสอบและให้คะแนนโครงงานที่ได้รับมอบหมายได้ที่หน้านี้ ระบบจะแจ้งเตือนล่วงหน้าก่อนถึงวันสอบทุกครั้ง</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ ADMIN SHELL ============ -->
+  <div id="admin-shell" class="screen">
+    <header class="topbar admin">
+      <div class="brand">
+        <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
+          <circle cx="17" cy="17" r="15.5" stroke="#fff" stroke-width="1.6"/>
+          <path d="M17 4 V10 M17 24 V30 M4 17 H10 M24 17 H30" stroke="#fff" stroke-width="1.6"/>
+          <circle cx="17" cy="17" r="6" fill="#CB5A1E"/>
+        </svg>
+        <div class="brand-title">แผงควบคุมผู้ดูแลระบบ<small>ระบบสอบโครงงาน · คณะวิศวกรรมศาสตร์</small></div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn ghost small" id="btn-admin-logout" style="border-color:#fff;color:#fff;">ออกจากระบบ</button>
+      </div>
+    </header>
+    <main>
+      <div class="stats">
+        <div class="stat-card"><div class="num" id="stat-total">0</div><div class="label">ผู้ใช้ทั้งหมด</div></div>
+        <div class="stat-card"><div class="num" id="stat-student">0</div><div class="label">นักศึกษา</div></div>
+        <div class="stat-card"><div class="num" id="stat-teacher">0</div><div class="label">อาจารย์</div></div>
+        <div class="stat-card"><div class="num" id="stat-staff">0</div><div class="label">เจ้าหน้าที่</div></div>
+      </div>
+
+      <div class="card">
+        <h2>รายชื่อผู้ลงทะเบียน</h2>
+        <div class="toolbar">
+          <input type="text" id="admin-search" placeholder="ค้นหาชื่อ, รหัส, อีเมล...">
+          <select id="admin-filter-role">
+            <option value="">ทุกบทบาท</option>
+            <option value="นักศึกษา">นักศึกษา</option>
+            <option value="อาจารย์">อาจารย์</option>
+            <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+          </select>
+        </div>
+        <table>
+          <thead>
+            <tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>สาขา</th><th>บทบาท</th><th>เบอร์โทร</th><th>อีเมล</th><th>ลงทะเบียนเมื่อ</th><th></th></tr>
+          </thead>
+          <tbody id="admin-user-table"></tbody>
+        </table>
+        <div class="empty" id="admin-empty" style="display:none;">ไม่พบผู้ใช้ที่ตรงกับเงื่อนไข</div>
+      </div>
+    </main>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const ADMIN_CODE = "ENGRU-ADMIN-2026";
+
+  // In-memory demo data (no backend — resets on page reload)
+  let users = [
+    {studentId:"6512345678", firstName:"สมชาย", lastName:"ใจดี", major:"วิศวกรรมโยธา", phone:"081-234-5678", email:"somchai@rumail.ru.ac.th", role:"นักศึกษา", password:"1234", registeredAt:"01/09/2569"},
+    {studentId:"A00123", firstName:"วิภา", lastName:"ศรีสุข", major:"วิศวกรรมพลังงาน", phone:"089-111-2222", email:"wipa@rumail.ru.ac.th", role:"อาจารย์", password:"1234", registeredAt:"28/08/2569"},
+    {studentId:"S00045", firstName:"ปิยะดา", lastName:"รักเรียน", major:"วิศวกรรมคอมพิวเตอร์", phone:"082-333-4444", email:"piyada@rumail.ru.ac.th", role:"เจ้าหน้าที่", password:"1234", registeredAt:"20/08/2569"}
+  ];
+  let currentUser = null;
+  let projects = [];
+
+  const $ = (sel) => document.querySelector(sel);
+  const screens = ["screen-login","screen-register","app-shell","admin-shell"];
+  function showScreen(id){
+    screens.forEach(s => $("#"+s).classList.toggle("active", s === id));
+    window.scrollTo(0,0);
+  }
+  function showError(boxId, msg){
+    const box = $("#"+boxId);
+    box.textContent = msg;
+    box.classList.add("show");
+  }
+  function clearError(boxId){
+    const box = $("#"+boxId);
+    box.textContent = "";
+    box.classList.remove("show");
+  }
+
+  // ---- Tabs on login screen ----
+  document.querySelectorAll(".tab").forEach(tab=>{
+    tab.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+      tab.classList.add("active");
+      $("#form-login-"+tab.dataset.tab).classList.add("active");
+    });
+  });
+
+  // ---- Navigation links ----
+  $("#go-register").addEventListener("click", ()=>{ showScreen("screen-register"); clearError("err-register"); });
+  $("#go-login").addEventListener("click", ()=>{ showScreen("screen-login"); });
+
+  // ---- Role picker on register form ----
+  document.querySelectorAll("#rg-role-group .role-option").forEach(opt=>{
+    opt.addEventListener("click", ()=>{
+      document.querySelectorAll("#rg-role-group .role-option").forEach(o=>o.classList.remove("checked"));
+      opt.classList.add("checked");
+      opt.querySelector("input").checked = true;
+    });
+  });
+
+  // ---- Register submit ----
+  $("#form-register").addEventListener("submit", (e)=>{
+    e.preventDefault();
+    clearError("err-register");
+    const studentId = $("#rg-id").value.trim();
+    const major = $("#rg-major").value;
+    const firstName = $("#rg-fname").value.trim();
+    const lastName = $("#rg-lname").value.trim();
+    const phone = $("#rg-phone").value.trim();
+    const email = $("#rg-email").value.trim();
+    const role = document.querySelector('input[name="rg-role"]:checked').value;
+    const password = $("#rg-pass").value;
+    const password2 = $("#rg-pass2").value;
+
+    if(users.some(u => u.studentId === studentId)){
+      showError("err-register","รหัสนี้ถูกลงทะเบียนไว้แล้ว");
+      return;
+    }
+    if(users.some(u => u.email === email)){
+      showError("err-register","อีเมลนี้ถูกใช้ลงทะเบียนไว้แล้ว");
+      return;
+    }
+    if(!email.toLowerCase().endsWith("@rumail.ru.ac.th")){
+      showError("err-register","กรุณาใช้อีเมลมหาวิทยาลัย รูปแบบ name@rumail.ru.ac.th");
+      return;
+    }
+    if(password.length < 4){
+      showError("err-register","รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร");
+      return;
+    }
+    if(password !== password2){
+      showError("err-register","รหัสผ่านทั้งสองช่องไม่ตรงกัน");
+      return;
+    }
+
+    const today = new Date();
+    const registeredAt = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+(today.getFullYear()+543);
+
+    users.push({studentId, firstName, lastName, major, phone, email, role, password, registeredAt});
+    e.target.reset();
+    document.querySelectorAll("#rg-role-group .role-option").forEach((o,i)=>o.classList.toggle("checked", i===0));
+    showScreen("screen-login");
+    document.querySelector('.tab[data-tab="user"]').click();
+    $("#li-id").value = studentId;
+  });
+
+  // ---- User login submit ----
+  $("#form-login-user").addEventListener("submit",(e)=>{
+    e.preventDefault();
+    clearError("err-login-user");
+    const idOrEmail = $("#li-id").value.trim();
+    const pass = $("#li-pass").value;
+    const user = users.find(u => (u.studentId === idOrEmail || u.email === idOrEmail) && u.password === pass);
+    if(!user){
+      showError("err-login-user","รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง");
+      return;
+    }
+    currentUser = user;
+    enterDashboard(user);
+  });
+
+  // ---- Admin login submit ----
+  $("#form-login-admin").addEventListener("submit",(e)=>{
+    e.preventDefault();
+    clearError("err-login-admin");
+    const code = $("#li-admin-code").value;
+    if(code !== ADMIN_CODE){
+      showError("err-login-admin","รหัสผู้ดูแลระบบไม่ถูกต้อง");
+      return;
+    }
+    e.target.reset();
+    renderAdminTable();
+    showScreen("admin-shell");
+  });
+
+  function enterDashboard(user){
+    $("#chip-name").textContent = user.firstName+" "+user.lastName;
+    $("#chip-role").textContent = user.role+" · "+user.major;
+    $("#dash-hello").textContent = "สวัสดี คุณ"+user.firstName;
+    $("#dash-sub").textContent = user.role === "นักศึกษา"
+      ? "ภาพรวมกำหนดการสอบโครงงานของคุณ สาขา"+user.major
+      : "ภาพรวมกำหนดการสอบโครงงานที่เกี่ยวข้องกับคุณ";
+    $("#teacher-note-card").style.display = (user.role === "อาจารย์") ? "block" : "none";
+    renderProjectTable();
+    showScreen("app-shell");
+  }
+
+  $("#btn-logout").addEventListener("click", ()=>{
+    currentUser = null;
+    showScreen("screen-login");
+  });
+  $("#btn-admin-logout").addEventListener("click", ()=>{
+    showScreen("screen-login");
+    document.querySelector('.tab[data-tab="user"]').click();
+  });
+
+  // ---- Admin table ----
+  function renderAdminTable(){
+    const q = ($("#admin-search")?.value || "").trim().toLowerCase();
+    const roleFilter = $("#admin-filter-role")?.value || "";
+    const filtered = users.filter(u=>{
+      const matchesQ = !q || (u.firstName+" "+u.lastName+" "+u.studentId+" "+u.email).toLowerCase().includes(q);
+      const matchesRole = !roleFilter || u.role === roleFilter;
+      return matchesQ && matchesRole;
+    });
+
+    const tbody = $("#admin-user-table");
+    tbody.innerHTML = "";
+    filtered.forEach((u, idx)=>{
+      const realIdx = users.indexOf(u);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${u.studentId}</td>
+        <td>${u.firstName} ${u.lastName}</td>
+        <td>${u.major}</td>
+        <td>${u.role}</td>
+        <td>${u.phone}</td>
+        <td>${u.email}</td>
+        <td>${u.registeredAt}</td>
+        <td><button class="btn danger small" data-remove="${realIdx}">ลบ</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    $("#admin-empty").style.display = filtered.length ? "none" : "block";
+
+    tbody.querySelectorAll("[data-remove]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const i = Number(btn.dataset.remove);
+        users.splice(i,1);
+        renderAdminTable();
+      });
+    });
+
+    $("#stat-total").textContent = users.length;
+    $("#stat-student").textContent = users.filter(u=>u.role==="นักศึกษา").length;
+    $("#stat-teacher").textContent = users.filter(u=>u.role==="อาจารย์").length;
+    $("#stat-staff").textContent = users.filter(u=>u.role==="เจ้าหน้าที่").length;
+  }
+  $("#admin-search").addEventListener("input", renderAdminTable);
+  $("#admin-filter-role").addEventListener("change", renderAdminTable);
+
+  // ---- Project members (min 3, max 5) ----
+  function getMemberRowCount(){ return document.querySelectorAll("#member-rows .member-row").length; }
+
+  function addMemberRow(removable){
+    if(getMemberRowCount() >= 5) return;
+    const div = document.createElement("div");
+    div.className = "member-row";
+    div.innerHTML = `
+      <div class="field" style="margin-bottom:0;"><label>รหัสนักศึกษา</label><input type="text" class="mem-id"></div>
+      <div class="field" style="margin-bottom:0;"><label>ชื่อ-นามสกุล</label><input type="text" class="mem-name"></div>
+      ${removable ? '<button type="button" class="btn ghost small remove-member">ลบ</button>' : '<div></div>'}
+    `;
+    $("#member-rows").appendChild(div);
+    updateAddMemberBtn();
+  }
+  function updateAddMemberBtn(){
+    const count = getMemberRowCount();
+    const btn = $("#btn-add-member");
+    btn.disabled = count >= 5;
+    btn.style.opacity = count >= 5 ? "0.5" : "1";
+    btn.textContent = count >= 5 ? "ครบจำนวนสมาชิกสูงสุดแล้ว (5 คน)" : "+ เพิ่มสมาชิก";
+  }
+  function resetMemberRows(){
+    $("#member-rows").innerHTML = "";
+    addMemberRow(false);
+    addMemberRow(false);
+    addMemberRow(false);
+  }
+  $("#member-rows").addEventListener("click",(e)=>{
+    if(e.target.classList.contains("remove-member")){
+      e.target.closest(".member-row").remove();
+      updateAddMemberBtn();
+    }
+  });
+  $("#btn-add-member").addEventListener("click", ()=> addMemberRow(true));
+
+  function renderProjectTable(){
+    const tbody = $("#project-table");
+    tbody.innerHTML = "";
+    projects.forEach(p=>{
+      const memberList = p.members.map(m => `${m.name} (${m.id})`).join(", ");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${p.title}</td><td>${memberList}</td><td>${p.advisor}</td><td>${p.submittedBy}</td><td>${p.submittedAt}</td>`;
+      tbody.appendChild(tr);
+    });
+    $("#project-empty").style.display = projects.length ? "none" : "block";
+  }
+
+  $("#form-project").addEventListener("submit",(e)=>{
+    e.preventDefault();
+    clearError("err-project");
+    const title = $("#pj-title").value.trim();
+    const advisor = $("#pj-advisor").value.trim();
+    const members = [];
+    document.querySelectorAll("#member-rows .member-row").forEach(row=>{
+      const id = row.querySelector(".mem-id").value.trim();
+      const name = row.querySelector(".mem-name").value.trim();
+      if(id && name) members.push({id, name});
+    });
+
+    if(!title){ showError("err-project","กรุณากรอกชื่อเรื่องโครงงาน"); return; }
+    if(members.length < 3){ showError("err-project","กรุณากรอกรหัสนักศึกษาและชื่อ-นามสกุลของสมาชิกอย่างน้อย 3 คน"); return; }
+    if(!advisor){ showError("err-project","กรุณากรอกชื่ออาจารย์ที่ปรึกษาโครงงาน"); return; }
+
+    const today = new Date();
+    const submittedAt = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+(today.getFullYear()+543);
+    projects.push({
+      title, members, advisor,
+      submittedBy: currentUser ? (currentUser.firstName+" "+currentUser.lastName) : "-",
+      submittedAt
+    });
+    e.target.reset();
+    resetMemberRows();
+    renderProjectTable();
+  });
+
+  resetMemberRows();
+  renderProjectTable();
+
+  showScreen("screen-login");
+})();
+</script>
+</body>
+</html>
