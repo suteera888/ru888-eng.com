@@ -177,6 +177,7 @@
   .status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600;}
   .status.scheduled{background:var(--blue-soft);color:var(--blue);}
   .status.done{background:#DDEFE4;color:var(--green);}
+  .status.cancelled{background:#FBEAEA;color:var(--red);}
 
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;}
   .stat-card{background:var(--panel);border:1px solid var(--line);padding:18px 20px;}
@@ -451,7 +452,7 @@
         <h2>ตารางสอบโครงงาน</h2>
         <table>
           <thead>
-            <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>จำนวนสมาชิก</th><th>อาจารย์ที่ปรึกษา</th><th>วันที่ส่งข้อมูล</th><th></th></tr>
+            <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>อาจารย์ที่ปรึกษา</th><th>กำหนดสอบ</th><th>สถานะ</th><th></th></tr>
           </thead>
           <tbody id="project-table"></tbody>
         </table>
@@ -501,7 +502,7 @@
         </div>
         <table>
           <thead>
-            <tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>สาขา</th><th>บทบาท</th><th>เบอร์โทร</th><th>อีเมล</th><th>ลงทะเบียนเมื่อ</th><th></th></tr>
+            <tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>สาขา</th><th>บทบาท</th><th>เบอร์โทร</th><th>อีเมล</th><th>ลงทะเบียนเมื่อ</th><th></th><th></th></tr>
           </thead>
           <tbody id="admin-user-table"></tbody>
         </table>
@@ -512,7 +513,7 @@
         <h2>โครงงานทั้งหมดในระบบ</h2>
         <table>
           <thead>
-            <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>จำนวนสมาชิก</th><th>อาจารย์ที่ปรึกษา</th><th>วันที่ส่งข้อมูล</th><th></th></tr>
+            <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>อาจารย์ที่ปรึกษา</th><th>กำหนดสอบ</th><th>สถานะ</th><th></th><th></th><th></th></tr>
           </thead>
           <tbody id="admin-project-table"></tbody>
         </table>
@@ -530,11 +531,104 @@
       </div>
       <div class="field-hint">อาจารย์ที่ปรึกษา: <strong id="modal-advisor">—</strong></div>
       <div class="field-hint">ส่งโดยรหัสผู้ใช้งาน: <strong id="modal-submitter">—</strong></div>
-      <div class="field-hint" style="margin-bottom:14px;">วันที่ส่งข้อมูล: <strong id="modal-date">—</strong></div>
+      <div class="field-hint">วันที่ส่งข้อมูล: <strong id="modal-date">—</strong></div>
+      <div class="field-hint">กำหนดสอบ: <strong id="modal-schedule">—</strong></div>
+      <div class="field-hint" style="margin-bottom:14px;">สถานะ: <strong id="modal-status">—</strong></div>
       <table>
         <thead><tr><th>รหัสนักศึกษา</th><th>ชื่อ-นามสกุล</th></tr></thead>
         <tbody id="modal-members"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ============ USER EDIT MODAL (admin only) ============ -->
+  <div id="user-edit-modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>แก้ไขข้อมูลผู้ใช้</h3>
+        <button type="button" class="btn ghost small" id="user-edit-close">ปิด</button>
+      </div>
+      <form id="form-user-edit">
+        <div class="error-box" id="err-user-edit"></div>
+        <div class="field">
+          <label>รหัสนักศึกษา / รหัสประจำตัว</label>
+          <input type="text" id="ue-studentid" disabled>
+        </div>
+        <div class="form-row2">
+          <div class="field"><label for="ue-fname">ชื่อ</label><input type="text" id="ue-fname" required></div>
+          <div class="field"><label for="ue-lname">นามสกุล</label><input type="text" id="ue-lname" required></div>
+        </div>
+        <div class="form-row2">
+          <div class="field">
+            <label for="ue-major">สาขา</label>
+            <select id="ue-major" required>
+              <option>วิศวกรรมโยธา</option>
+              <option>วิศวกรรมอุตสาหการ</option>
+              <option>วิศวกรรมสิ่งแวดล้อมและความปลอดภัย</option>
+              <option>วิศวกรรมคอมพิวเตอร์</option>
+              <option>วิศวกรรมพลังงาน</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ue-role">บทบาท</label>
+            <select id="ue-role" required>
+              <option>นักศึกษา</option>
+              <option>อาจารย์</option>
+              <option>เจ้าหน้าที่</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row2">
+          <div class="field"><label for="ue-phone">เบอร์โทรศัพท์</label><input type="tel" id="ue-phone"></div>
+          <div class="field"><label for="ue-email">อีเมล</label><input type="email" id="ue-email" required></div>
+        </div>
+        <button type="submit" class="btn accent" style="width:auto;padding:10px 24px;">บันทึกการแก้ไข</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ PROJECT EDIT MODAL (admin only) ============ -->
+  <div id="project-edit-modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>แก้ไขข้อมูลโครงงาน / กำหนดสอบ</h3>
+        <button type="button" class="btn ghost small" id="project-edit-close">ปิด</button>
+      </div>
+      <form id="form-project-edit">
+        <div class="error-box" id="err-project-edit"></div>
+        <div class="field">
+          <label for="pe-title">ชื่อเรื่องโครงงาน</label>
+          <input type="text" id="pe-title" required>
+        </div>
+
+        <div class="section-label">สมาชิกในกลุ่ม (อย่างน้อย 3 คน สูงสุด 5 คน)</div>
+        <div id="pe-member-rows"></div>
+        <button type="button" class="btn ghost small" id="pe-btn-add-member">+ เพิ่มสมาชิก</button>
+
+        <div class="field">
+          <label for="pe-advisor">อาจารย์ที่ปรึกษาโครงงาน</label>
+          <input type="text" id="pe-advisor" required>
+        </div>
+
+        <div class="section-label">กำหนดการสอบ</div>
+        <div class="form-row2">
+          <div class="field"><label for="pe-examdate">วันที่สอบ</label><input type="date" id="pe-examdate"></div>
+          <div class="field"><label for="pe-examtime">เวลา</label><input type="time" id="pe-examtime"></div>
+        </div>
+        <div class="form-row2">
+          <div class="field"><label for="pe-examroom">ห้องสอบ</label><input type="text" id="pe-examroom" placeholder="เช่น วศ.301"></div>
+          <div class="field">
+            <label for="pe-status">สถานะ</label>
+            <select id="pe-status">
+              <option value="รอสอบ">รอสอบ</option>
+              <option value="สอบแล้ว">สอบแล้ว</option>
+              <option value="ยกเลิก">ยกเลิก</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn accent" style="width:auto;padding:10px 24px;">บันทึกการแก้ไข</button>
+      </form>
     </div>
   </div>
 
@@ -726,6 +820,15 @@
       return false;
     }
   }
+  async function deleteProjectRecord(projectId){
+    try{
+      await dbDelete("projects:"+projectId, true);
+      return true;
+    }catch(err){
+      console.error("deleteProjectRecord error:", err);
+      return false;
+    }
+  }
 
   async function ensureSeedData(){
     if(usingSupabase()) return; // seed demo accounts only apply to the local fallback mode
@@ -796,6 +899,21 @@
       }};
     }catch(err){ return { ok:false, message:(err && err.message) || "เข้าสู่ระบบไม่สำเร็จ" }; }
   }
+  async function sbUpdateUser(payload){
+    try{
+      const { error } = await sb.from("profiles").update({
+        first_name: payload.firstName, last_name: payload.lastName, major: payload.major,
+        phone: payload.phone, email: payload.email, role: payload.role
+      }).eq("student_id", payload.studentId);
+      if(error){
+        if(error.code === "23505" || /duplicate|unique/i.test(error.message||"")){
+          return { ok:false, message:"อีเมลนี้ถูกใช้โดยบัญชีอื่นแล้ว" };
+        }
+        return { ok:false, message: error.message };
+      }
+      return { ok:true };
+    }catch(err){ return { ok:false, message:(err && err.message) || "บันทึกไม่สำเร็จ" }; }
+  }
   async function sbDeleteUser(studentId){
     try{
       const { error } = await sb.from("profiles").delete().eq("student_id", studentId);
@@ -809,6 +927,8 @@
       if(error) throw error;
       return (data||[]).map(row => ({
         id: row.id, title: row.title, advisor: row.advisor, members: row.members || [],
+        examDate: row.exam_date || null, examTime: row.exam_time || null,
+        examRoom: row.exam_room || null, status: row.status || "รอสอบ",
         submittedById: row.submitted_by_student_id, submittedByName: row.submitted_by_name,
         submittedAt: new Date(row.submitted_at).toLocaleDateString("th-TH"),
         ts: new Date(row.submitted_at).getTime()
@@ -819,11 +939,31 @@
     try{
       const { error } = await sb.from("projects").insert({
         title: project.title, advisor: project.advisor, members: project.members,
+        exam_date: project.examDate || null, exam_time: project.examTime || null,
+        exam_room: project.examRoom || null, status: project.status || "รอสอบ",
         submitted_by_student_id: project.submittedById, submitted_by_name: project.submittedByName
       });
       if(error) throw error;
       return true;
     }catch(err){ console.error("sbSaveProject error:", err); return false; }
+  }
+  async function sbUpdateProject(project){
+    try{
+      const { error } = await sb.from("projects").update({
+        title: project.title, advisor: project.advisor, members: project.members,
+        exam_date: project.examDate || null, exam_time: project.examTime || null,
+        exam_room: project.examRoom || null, status: project.status || "รอสอบ"
+      }).eq("id", project.id);
+      if(error) throw error;
+      return true;
+    }catch(err){ console.error("sbUpdateProject error:", err); return false; }
+  }
+  async function sbDeleteProject(projectId){
+    try{
+      const { error } = await sb.from("projects").delete().eq("id", projectId);
+      if(error) throw error;
+      return true;
+    }catch(err){ console.error("sbDeleteProject error:", err); return false; }
   }
 
   async function refreshUsers(){
@@ -1037,15 +1177,19 @@
         <td>${u.firstName} ${u.lastName}</td>
         <td>${u.major}</td>
         <td>${u.role}</td>
-        <td>${u.phone}</td>
+        <td>${u.phone||"-"}</td>
         <td>${u.email}</td>
         <td>${u.registeredAt}</td>
+        <td><button type="button" class="link-btn" data-edit-user="${u.studentId}">แก้ไข</button></td>
         <td><button class="btn danger small" data-remove="${u.studentId}">ลบ</button></td>
       `;
       tbody.appendChild(tr);
     });
     $("#admin-empty").style.display = filtered.length ? "none" : "block";
 
+    tbody.querySelectorAll("[data-edit-user]").forEach(btn=>{
+      btn.addEventListener("click", ()=> openUserEditModal(btn.dataset.editUser));
+    });
     tbody.querySelectorAll("[data-remove]").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         btn.disabled = true;
@@ -1063,6 +1207,23 @@
   $("#admin-search").addEventListener("input", renderAdminTable);
   $("#admin-filter-role").addEventListener("change", renderAdminTable);
 
+  // ---- Helpers shared by the project tables ----
+  function formatExamSchedule(p){
+    const parts = [];
+    if(p.examDate){
+      const d = new Date(p.examDate+"T00:00:00");
+      parts.push(isNaN(d.getTime()) ? p.examDate : d.toLocaleDateString("th-TH", {year:"numeric", month:"short", day:"numeric"}));
+    }
+    if(p.examTime) parts.push(p.examTime+" น.");
+    if(p.examRoom) parts.push("ห้อง "+p.examRoom);
+    return parts.length ? parts.join(" · ") : "ยังไม่กำหนด";
+  }
+  function statusClass(status){
+    if(status === "สอบแล้ว") return "done";
+    if(status === "ยกเลิก") return "cancelled";
+    return "scheduled";
+  }
+
   // ---- Admin: all projects table ----
   function renderAdminProjectTable(){
     const tbody = $("#admin-project-table");
@@ -1072,10 +1233,12 @@
       tr.innerHTML = `
         <td>${p.submittedById}</td>
         <td>${p.title}</td>
-        <td>${p.members.length}</td>
         <td>${p.advisor}</td>
-        <td>${p.submittedAt}</td>
+        <td>${formatExamSchedule(p)}</td>
+        <td><span class="status ${statusClass(p.status)}">${p.status||"รอสอบ"}</span></td>
         <td><button type="button" class="link-btn" data-view="${p.id}">ดูรายละเอียด</button></td>
+        <td><button type="button" class="link-btn" data-edit-project="${p.id}">แก้ไข</button></td>
+        <td><button type="button" class="btn danger small" data-remove-project="${p.id}">ลบ</button></td>
       `;
       tbody.appendChild(tr);
     });
@@ -1083,13 +1246,24 @@
     tbody.querySelectorAll("[data-view]").forEach(btn=>{
       btn.addEventListener("click", ()=> openProjectModal(btn.dataset.view));
     });
+    tbody.querySelectorAll("[data-edit-project]").forEach(btn=>{
+      btn.addEventListener("click", ()=> openProjectEditModal(btn.dataset.editProject));
+    });
+    tbody.querySelectorAll("[data-remove-project]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        btn.disabled = true;
+        await (usingSupabase() ? sbDeleteProject(btn.dataset.removeProject) : deleteProjectRecord(btn.dataset.removeProject));
+        await refreshProjects();
+        renderAdminProjectTable();
+      });
+    });
   }
 
-  // ---- Project members (min 3, max 5) ----
-  function getMemberRowCount(){ return document.querySelectorAll("#member-rows .member-row").length; }
+  // ---- Project members (min 3, max 5) — shared by the registration form and the admin edit modal ----
+  function getMemberRowCount(containerSel){ return document.querySelectorAll(containerSel+" .member-row").length; }
 
-  function addMemberRow(removable){
-    if(getMemberRowCount() >= 5) return;
+  function addMemberRow(containerSel, btnSel, removable){
+    if(getMemberRowCount(containerSel) >= 5) return;
     const div = document.createElement("div");
     div.className = "member-row";
     div.innerHTML = `
@@ -1097,29 +1271,45 @@
       <div class="field" style="margin-bottom:0;"><label>ชื่อ-นามสกุล</label><input type="text" class="mem-name"></div>
       ${removable ? '<button type="button" class="btn ghost small remove-member">ลบ</button>' : '<div></div>'}
     `;
-    $("#member-rows").appendChild(div);
-    updateAddMemberBtn();
+    $(containerSel).appendChild(div);
+    updateAddMemberBtn(containerSel, btnSel);
   }
-  function updateAddMemberBtn(){
-    const count = getMemberRowCount();
-    const btn = $("#btn-add-member");
+  function updateAddMemberBtn(containerSel, btnSel){
+    const count = getMemberRowCount(containerSel);
+    const btn = $(btnSel);
+    if(!btn) return;
     btn.disabled = count >= 5;
     btn.style.opacity = count >= 5 ? "0.5" : "1";
     btn.textContent = count >= 5 ? "ครบจำนวนสมาชิกสูงสุดแล้ว (5 คน)" : "+ เพิ่มสมาชิก";
   }
-  function resetMemberRows(){
-    $("#member-rows").innerHTML = "";
-    addMemberRow(false);
-    addMemberRow(false);
-    addMemberRow(false);
+  function resetMemberRows(containerSel, btnSel, prefillMembers){
+    $(containerSel).innerHTML = "";
+    const baseCount = 3;
+    const total = (prefillMembers && prefillMembers.length > baseCount) ? prefillMembers.length : baseCount;
+    for(let i=0; i<total; i++){ addMemberRow(containerSel, btnSel, i >= baseCount); }
+    if(prefillMembers && prefillMembers.length){
+      const rows = document.querySelectorAll(containerSel+" .member-row");
+      prefillMembers.forEach((m, i)=>{
+        if(rows[i]){
+          rows[i].querySelector(".mem-id").value = m.id || "";
+          rows[i].querySelector(".mem-name").value = m.name || "";
+        }
+      });
+    }
+    updateAddMemberBtn(containerSel, btnSel);
   }
-  $("#member-rows").addEventListener("click",(e)=>{
+  document.addEventListener("click",(e)=>{
     if(e.target.classList.contains("remove-member")){
-      e.target.closest(".member-row").remove();
-      updateAddMemberBtn();
+      const row = e.target.closest(".member-row");
+      const container = row.parentElement;
+      row.remove();
+      const btnSel = container.id === "pe-member-rows" ? "#pe-btn-add-member" : "#btn-add-member";
+      updateAddMemberBtn("#"+container.id, btnSel);
     }
   });
-  $("#btn-add-member").addEventListener("click", ()=> addMemberRow(true));
+  $("#btn-add-member").addEventListener("click", ()=> addMemberRow("#member-rows", "#btn-add-member", true));
+  $("#pe-btn-add-member").addEventListener("click", ()=> addMemberRow("#pe-member-rows", "#pe-btn-add-member", true));
+
 
   // ---- Dashboard: project schedule table (real submitted data) ----
   function renderProjectTable(){
@@ -1130,9 +1320,9 @@
       tr.innerHTML = `
         <td>${p.submittedById}</td>
         <td>${p.title}</td>
-        <td>${p.members.length}</td>
         <td>${p.advisor}</td>
-        <td>${p.submittedAt}</td>
+        <td>${formatExamSchedule(p)}</td>
+        <td><span class="status ${statusClass(p.status)}">${p.status||"รอสอบ"}</span></td>
         <td><button type="button" class="link-btn" data-view="${p.id}">ดูรายละเอียด</button></td>
       `;
       tbody.appendChild(tr);
@@ -1151,6 +1341,8 @@
     $("#modal-advisor").textContent = p.advisor;
     $("#modal-submitter").textContent = p.submittedById + " (" + p.submittedByName + ")";
     $("#modal-date").textContent = p.submittedAt;
+    $("#modal-schedule").textContent = formatExamSchedule(p);
+    $("#modal-status").textContent = p.status || "รอสอบ";
     const mtbody = $("#modal-members");
     mtbody.innerHTML = "";
     p.members.forEach(m=>{
@@ -1164,6 +1356,123 @@
   $("#modal-close").addEventListener("click", closeProjectModal);
   $("#project-modal-overlay").addEventListener("click",(e)=>{
     if(e.target.id === "project-modal-overlay") closeProjectModal();
+  });
+
+  // ---- User edit modal (admin only) ----
+  function openUserEditModal(studentId){
+    const u = users.find(x => x.studentId === studentId);
+    if(!u) return;
+    clearError("err-user-edit");
+    $("#ue-studentid").value = u.studentId;
+    $("#ue-fname").value = u.firstName;
+    $("#ue-lname").value = u.lastName;
+    $("#ue-major").value = u.major;
+    $("#ue-role").value = u.role;
+    $("#ue-phone").value = u.phone || "";
+    $("#ue-email").value = u.email;
+    $("#user-edit-modal-overlay").classList.add("show");
+  }
+  function closeUserEditModal(){ $("#user-edit-modal-overlay").classList.remove("show"); }
+  $("#user-edit-close").addEventListener("click", closeUserEditModal);
+  $("#user-edit-modal-overlay").addEventListener("click",(e)=>{
+    if(e.target.id === "user-edit-modal-overlay") closeUserEditModal();
+  });
+  $("#form-user-edit").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    clearError("err-user-edit");
+    const studentId = $("#ue-studentid").value;
+    const payload = {
+      studentId,
+      firstName: $("#ue-fname").value.trim(),
+      lastName: $("#ue-lname").value.trim(),
+      major: $("#ue-major").value,
+      role: $("#ue-role").value,
+      phone: $("#ue-phone").value.trim(),
+      email: $("#ue-email").value.trim()
+    };
+    if(!payload.email.toLowerCase().endsWith("@rumail.ru.ac.th")){
+      showError("err-user-edit","กรุณาใช้อีเมลมหาวิทยาลัย รูปแบบ name@rumail.ru.ac.th");
+      return;
+    }
+    setBusy(e.target, true);
+    let ok;
+    if(usingSupabase()){
+      const result = await sbUpdateUser(payload);
+      ok = result.ok;
+      if(!ok){
+        setBusy(e.target, false);
+        showError("err-user-edit", result.message || "บันทึกไม่สำเร็จ");
+        return;
+      }
+    }else{
+      const existing = users.find(u => u.studentId === studentId) || {};
+      const updated = Object.assign({}, existing, payload);
+      ok = await saveUser(updated);
+    }
+    setBusy(e.target, false);
+    if(!ok){
+      showError("err-user-edit","บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      return;
+    }
+    await refreshUsers();
+    renderAdminTable();
+    closeUserEditModal();
+  });
+
+  // ---- Project edit modal (admin only) ----
+  function openProjectEditModal(projectId){
+    const p = projects.find(pr => pr.id === projectId);
+    if(!p) return;
+    clearError("err-project-edit");
+    $("#form-project-edit").dataset.editingId = projectId;
+    $("#pe-title").value = p.title;
+    $("#pe-advisor").value = p.advisor;
+    $("#pe-examdate").value = p.examDate || "";
+    $("#pe-examtime").value = p.examTime || "";
+    $("#pe-examroom").value = p.examRoom || "";
+    $("#pe-status").value = p.status || "รอสอบ";
+    resetMemberRows("#pe-member-rows", "#pe-btn-add-member", p.members);
+    $("#project-edit-modal-overlay").classList.add("show");
+  }
+  function closeProjectEditModal(){ $("#project-edit-modal-overlay").classList.remove("show"); }
+  $("#project-edit-close").addEventListener("click", closeProjectEditModal);
+  $("#project-edit-modal-overlay").addEventListener("click",(e)=>{
+    if(e.target.id === "project-edit-modal-overlay") closeProjectEditModal();
+  });
+  $("#form-project-edit").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    clearError("err-project-edit");
+    const projectId = e.target.dataset.editingId;
+    const title = $("#pe-title").value.trim();
+    const advisor = $("#pe-advisor").value.trim();
+    const members = [];
+    document.querySelectorAll("#pe-member-rows .member-row").forEach(row=>{
+      const id = row.querySelector(".mem-id").value.trim();
+      const name = row.querySelector(".mem-name").value.trim();
+      if(id && name) members.push({id, name});
+    });
+    const examDate = $("#pe-examdate").value || null;
+    const examTime = $("#pe-examtime").value || null;
+    const examRoom = $("#pe-examroom").value.trim() || null;
+    const status = $("#pe-status").value;
+
+    if(!title){ showError("err-project-edit","กรุณากรอกชื่อเรื่องโครงงาน"); return; }
+    if(members.length < 3){ showError("err-project-edit","กรุณากรอกข้อมูลสมาชิกอย่างน้อย 3 คน"); return; }
+    if(!advisor){ showError("err-project-edit","กรุณากรอกชื่ออาจารย์ที่ปรึกษาโครงงาน"); return; }
+
+    const existing = projects.find(p => p.id === projectId) || {};
+    const updated = Object.assign({}, existing, { title, advisor, members, examDate, examTime, examRoom, status });
+
+    setBusy(e.target, true);
+    const ok = usingSupabase() ? await sbUpdateProject(updated) : await saveProject(updated);
+    setBusy(e.target, false);
+    if(!ok){
+      showError("err-project-edit","บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      return;
+    }
+    await refreshProjects();
+    renderAdminProjectTable();
+    closeProjectEditModal();
   });
 
   // ---- Project submission ----
@@ -1187,6 +1496,7 @@
     const project = {
       id: "p_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
       title, members, advisor,
+      examDate: null, examTime: null, examRoom: null, status: "รอสอบ",
       submittedById: currentUser ? currentUser.studentId : "-",
       submittedByName: currentUser ? (currentUser.firstName+" "+currentUser.lastName) : "-",
       submittedAt: todayThaiDate(),
@@ -1200,12 +1510,12 @@
     }
     projects.push(project);
     e.target.reset();
-    resetMemberRows();
+    resetMemberRows("#member-rows", "#btn-add-member");
     renderProjectTable();
   });
 
   // ---- Boot ----
-  resetMemberRows();
+  resetMemberRows("#member-rows", "#btn-add-member");
   showScreen("screen-login");
 
   (async function init(){
