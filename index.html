@@ -549,8 +549,8 @@
   // ถ้ายังไม่ตั้งค่า (ปล่อยเป็นค่าเริ่มต้น) แอปจะสลับไปทำงานแบบ
   // เก็บข้อมูลในเครื่องนี้เท่านั้น (โหมดเดิม) โดยอัตโนมัติ
   // =========================================================
-  const SUPABASE_URL = "https://phgjucwmpccyglqnfass.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoZ2p1Y3dtcGNjeWdscW5mYXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MjMzNDMsImV4cCI6MjEwNDE5OTM0M30.QY_eni5kjqpiFNtWS5h-jbhBkkHpgoA4Was1wsYmUlI";
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
   const ADMIN_CODE = "ENGRU-ADMIN-2026";
   const SEED_FLAG_KEY = "meta:seeded_v1";
@@ -763,45 +763,36 @@
       }));
     }catch(err){ console.error("sbLoadAllUsers error:", err); return []; }
   }
-  async function sbFindEmailByStudentId(studentId){
-    try{
-      const { data, error } = await sb.from("profiles").select("email").eq("student_id", studentId).maybeSingle();
-      if(error) throw error;
-      return data ? data.email : null;
-    }catch(err){ return null; }
-  }
   async function sbRegisterUser(payload){
     try{
-      const { data, error } = await sb.auth.signUp({ email: payload.email, password: payload.password });
-      if(error) return { ok:false, message: error.message };
-      const uid = data.user ? data.user.id : (data.session ? data.session.user.id : null);
-      if(!uid){
-        return { ok:false, message:"สมัครสำเร็จแต่ต้องยืนยันอีเมลก่อนใช้งาน กรุณาปิด \"Confirm email\" ใน Supabase Authentication settings สำหรับการทดสอบ" };
-      }
-      const { error: insertErr } = await sb.from("profiles").insert({
-        id: uid, student_id: payload.studentId, first_name: payload.firstName, last_name: payload.lastName,
-        major: payload.major, phone: payload.phone, email: payload.email, role: payload.role
+      const { error } = await sb.from("profiles").insert({
+        student_id: payload.studentId, first_name: payload.firstName, last_name: payload.lastName,
+        major: payload.major, phone: payload.phone, email: payload.email, role: payload.role,
+        password: payload.password
       });
-      if(insertErr) return { ok:false, message: insertErr.message };
+      if(error){
+        if(error.code === "23505" || /duplicate|unique/i.test(error.message||"")){
+          return { ok:false, message:"รหัสนักศึกษาหรืออีเมลนี้ถูกลงทะเบียนไว้แล้ว" };
+        }
+        return { ok:false, message: error.message };
+      }
       return { ok:true };
     }catch(err){ return { ok:false, message: (err && err.message) || "เกิดข้อผิดพลาดในการสมัครสมาชิก" }; }
   }
   async function sbLoginUser(idOrEmail, password){
     try{
-      let email = idOrEmail;
-      if(idOrEmail.indexOf("@") === -1){
-        const found = await sbFindEmailByStudentId(idOrEmail);
-        if(!found) return { ok:false, message:"รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง" };
-        email = found;
+      const { data, error } = await sb.from("profiles").select("*")
+        .or(`student_id.eq.${idOrEmail},email.eq.${idOrEmail}`)
+        .limit(1);
+      if(error) throw error;
+      const row = data && data[0];
+      if(!row || row.password !== password){
+        return { ok:false, message:"รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง" };
       }
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if(error) return { ok:false, message:"รหัส/อีเมล หรือรหัสผ่านไม่ถูกต้อง" };
-      const { data: profile, error: profErr } = await sb.from("profiles").select("*").eq("id", data.user.id).maybeSingle();
-      if(profErr || !profile) return { ok:false, message:"เข้าสู่ระบบสำเร็จ แต่ไม่พบข้อมูลโปรไฟล์ของบัญชีนี้" };
       return { ok:true, user:{
-        id: profile.id, studentId: profile.student_id, firstName: profile.first_name, lastName: profile.last_name,
-        major: profile.major, phone: profile.phone, email: profile.email, role: profile.role,
-        registeredAt: new Date(profile.registered_at).toLocaleDateString("th-TH")
+        id: row.id, studentId: row.student_id, firstName: row.first_name, lastName: row.last_name,
+        major: row.major, phone: row.phone, email: row.email, role: row.role,
+        registeredAt: new Date(row.registered_at).toLocaleDateString("th-TH")
       }};
     }catch(err){ return { ok:false, message:(err && err.message) || "เข้าสู่ระบบไม่สำเร็จ" }; }
   }
@@ -826,11 +817,9 @@
   }
   async function sbSaveProject(project){
     try{
-      const { data: authData } = await sb.auth.getUser();
-      const uid = authData && authData.user ? authData.user.id : null;
       const { error } = await sb.from("projects").insert({
         title: project.title, advisor: project.advisor, members: project.members,
-        submitted_by: uid, submitted_by_student_id: project.submittedById, submitted_by_name: project.submittedByName
+        submitted_by_student_id: project.submittedById, submitted_by_name: project.submittedByName
       });
       if(error) throw error;
       return true;
