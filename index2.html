@@ -820,8 +820,8 @@
   // ถ้ายังไม่ตั้งค่า (ปล่อยเป็นค่าเริ่มต้น) แอปจะสลับไปทำงานแบบ
   // เก็บข้อมูลในเครื่องนี้เท่านั้น (โหมดเดิม) โดยอัตโนมัติ
   // =========================================================
-  const SUPABASE_URL = "YOUR_SUPABASE_URL";
-  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  const SUPABASE_URL = "https://phgjucwmpccyglqnfass.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_XpPzKaDAbkYx54sMzJa8jw_aUblV19a";
 
   const ADMIN_CODE = "ENGRU-ADMIN-2026";
   const SEED_FLAG_KEY = "meta:seeded_v1";
@@ -835,6 +835,23 @@
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function usingSupabase(){ return !!sb; }
+  function errInfo(err){
+    if(!err) return "(no error details available)";
+    const parts = [];
+    if(err.message) parts.push("message: "+err.message);
+    if(err.code) parts.push("code: "+err.code);
+    if(err.details) parts.push("details: "+err.details);
+    if(err.hint) parts.push("hint: "+err.hint);
+    if(err.status) parts.push("status: "+err.status);
+    if(err.name && !err.message) parts.push("name: "+err.name);
+    if(parts.length === 0){
+      try{ parts.push(JSON.stringify(err)); }catch(e){ parts.push(String(err)); }
+    }
+    return parts.join(" | ");
+  }
+  function logSbError(label, err){
+    console.error(label, errInfo(err), err);
+  }
 
   let users = [];
   let projects = [];
@@ -1032,16 +1049,18 @@
   // the local fallback above whenever SUPABASE_URL/ANON_KEY are
   // filled in at the top of this script).
   // =========================================================
+  let lastSbConnError = null;
   async function sbLoadAllUsers(){
     try{
       const { data, error } = await sb.from("profiles").select("*").order("registered_at", { ascending:true });
       if(error) throw error;
+      lastSbConnError = null;
       return (data||[]).map(row => ({
         id: row.id, studentId: row.student_id, firstName: row.first_name, lastName: row.last_name,
         major: row.major, phone: row.phone, email: row.email, role: row.role,
         registeredAt: new Date(row.registered_at).toLocaleDateString("th-TH")
       }));
-    }catch(err){ console.error("sbLoadAllUsers error:", err); return []; }
+    }catch(err){ logSbError("sbLoadAllUsers error:", err); lastSbConnError = errInfo(err); return []; }
   }
   async function sbRegisterUser(payload){
     try{
@@ -1096,7 +1115,7 @@
       const { error } = await sb.from("profiles").delete().eq("student_id", studentId);
       if(error) throw error;
       return true;
-    }catch(err){ console.error("sbDeleteUser error:", err); return false; }
+    }catch(err){ logSbError("sbDeleteUser error:", err); return false; }
   }
   async function sbLoadAllProjects(){
     try{
@@ -1110,7 +1129,7 @@
         submittedAt: new Date(row.submitted_at).toLocaleDateString("th-TH"),
         ts: new Date(row.submitted_at).getTime()
       }));
-    }catch(err){ console.error("sbLoadAllProjects error:", err); return []; }
+    }catch(err){ logSbError("sbLoadAllProjects error:", err); return []; }
   }
   async function sbSaveProject(project){
     try{
@@ -1122,7 +1141,7 @@
       });
       if(error) throw error;
       return true;
-    }catch(err){ console.error("sbSaveProject error:", err); return false; }
+    }catch(err){ logSbError("sbSaveProject error:", err); return false; }
   }
   async function sbUpdateProject(project){
     try{
@@ -1133,14 +1152,14 @@
       }).eq("id", project.id);
       if(error) throw error;
       return true;
-    }catch(err){ console.error("sbUpdateProject error:", err); return false; }
+    }catch(err){ logSbError("sbUpdateProject error:", err); return false; }
   }
   async function sbDeleteProject(projectId){
     try{
       const { error } = await sb.from("projects").delete().eq("id", projectId);
       if(error) throw error;
       return true;
-    }catch(err){ console.error("sbDeleteProject error:", err); return false; }
+    }catch(err){ logSbError("sbDeleteProject error:", err); return false; }
   }
 
   async function refreshUsers(){
