@@ -2,7 +2,8 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2C4A6E">
 <title>ระบบสอบโครงงาน · คณะวิศวกรรมศาสตร์ ม.รามคำแหง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
@@ -244,6 +245,111 @@
     .topbar{padding:12px 16px;flex-wrap:wrap;gap:10px;}
   }
 
+
+  /* =====================================================================
+     Responsive: มือถือ / iPad / เดสก์ท็อป (เฉพาะหน้าจอ ไม่กระทบการพิมพ์)
+     ===================================================================== */
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  body{ min-height:100vh; min-height:100dvh; overflow-x:hidden; }
+  #app, .auth-wrap{ min-height:100vh; min-height:100dvh; }
+  img, svg{ max-width:100%; }
+
+  .table-scroll{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-scroll > table{ min-width:560px; }
+  /* เงาที่ขอบตารางบอกว่ายังเลื่อนดูต่อทางซ้าย/ขวาได้ */
+  .table-scroll{
+    background:
+      linear-gradient(to right,#fff 30%,rgba(255,255,255,0)) left center/40px 100% no-repeat local,
+      linear-gradient(to left,#fff 30%,rgba(255,255,255,0)) right center/40px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%,rgba(20,26,36,.18),rgba(20,26,36,0)) left center/12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%,rgba(20,26,36,.18),rgba(20,26,36,0)) right center/12px 100% no-repeat scroll;
+  }
+  .table-scroll td{ overflow-wrap:break-word; }
+  .table-scroll td:first-child{ white-space:nowrap; }
+  .table-scroll .status, .table-scroll .link-btn{ white-space:nowrap; }
+  .toolbar{ flex-wrap:wrap; }
+  .toolbar select{ min-width:0; }
+
+  @media screen{
+    /* เผื่อพื้นที่ notch / แถบ home ของ iPhone และ iPad */
+    .topbar{ padding-left:max(28px, env(safe-area-inset-left)); padding-right:max(28px, env(safe-area-inset-right)); padding-top:max(14px, env(safe-area-inset-top)); }
+    main{ padding-left:max(28px, env(safe-area-inset-left)); padding-right:max(28px, env(safe-area-inset-right)); padding-bottom:max(60px, calc(env(safe-area-inset-bottom) + 30px)); }
+  }
+
+  /* ---------- แท็บเล็ต / iPad (641 - 1024px) ---------- */
+  @media screen and (min-width:641px) and (max-width:1024px){
+    main{ max-width:none; padding-top:26px; }
+    .stats{ grid-template-columns:repeat(2,1fr); }
+    .card{ padding:20px 20px; }
+    .table-scroll > table{ min-width:620px; }
+    .modal-box{ width:min(640px,100%); }
+    .register-card{ width:min(560px,100%); }
+    .auth-wrap{ padding:48px 28px 80px; }
+  }
+  /* iPad แนวนอน / จอเล็ก */
+  @media screen and (min-width:1025px) and (max-width:1180px){
+    main{ max-width:100%; }
+  }
+
+  /* ---------- อุปกรณ์สัมผัส: ปุ่มกดง่าย + กัน iOS ซูมเองตอนแตะช่องกรอก ---------- */
+  @media screen and (max-width:1024px), (pointer:coarse){
+    .field input, .field select, .toolbar input, .toolbar select, textarea{ font-size:16px; }
+    .btn{ min-height:44px; }
+    .btn.small{ min-height:40px; }
+    .tab{ padding-top:13px; padding-bottom:14px; min-height:44px; }
+    .role-option{ padding:13px 6px; }
+    .link-btn{ padding:8px 6px; }
+    .toggle-pass{ padding:10px 10px; }
+    th{ padding-top:11px; padding-bottom:11px; }
+  }
+
+  /* ---------- มือถือ (ไม่เกิน 640px) ---------- */
+  @media screen and (max-width:640px){
+    .auth-wrap{ padding:20px 12px 64px; align-items:flex-start; }
+    .auth-frame{ padding:10px; width:100%; }
+    .auth-card{ width:100%; padding:24px 18px 22px; }
+    .brand{ margin-bottom:18px; }
+    .brand-title{ font-size:14px; }
+    .brand-title small{ font-size:12px; }
+    .topbar{ padding-left:max(14px, env(safe-area-inset-left)); padding-right:max(14px, env(safe-area-inset-right)); }
+    .topbar-right{ width:100%; justify-content:space-between; gap:10px; }
+    .user-chip{ text-align:left; min-width:0; }
+    .user-chip .name{ overflow-wrap:anywhere; }
+    main{ padding-left:max(12px, env(safe-area-inset-left)); padding-right:max(12px, env(safe-area-inset-right)); padding-top:18px; }
+    .banner{ padding:16px 16px; margin-bottom:18px; }
+    .banner h1{ font-size:17px; }
+    .card{ padding:16px 14px; margin-bottom:16px; }
+    .card h2{ font-size:15px; }
+    .stats{ gap:10px; }
+    .stat-card{ padding:14px 14px; }
+    .stat-card .num{ font-size:22px; }
+    .toolbar{ flex-direction:column; align-items:stretch; }
+    .toolbar input, .toolbar select{ width:100%; }
+    .table-scroll{ margin:0 -14px; width:calc(100% + 28px); padding:0 14px; }
+    .table-scroll > table{ min-width:600px; }
+    .member-row .remove-member{ width:100%; }
+    .modal-overlay{ padding:10px; align-items:flex-end; }
+    .modal-box{ padding:18px 16px; max-height:92vh; max-height:92dvh; width:100%; }
+    #print-menu-overlay{ padding:0; }
+    .btn.accent[style*="width:auto"], .btn.ghost[style*="width:auto"]{ width:100% !important; }
+    #project-success-screen .btn{ width:100% !important; }
+    #project-success-screen td{ display:block; width:auto !important; }
+    #project-success-screen td:first-child{ padding-bottom:0; border-bottom:none; }
+    .field-hint{ font-size:12.5px; }
+  }
+
+  /* จอเล็กมาก (iPhone SE / จอแคบ) */
+  @media screen and (max-width:360px){
+    .stats{ grid-template-columns:1fr; }
+    .brand-logo{ width:40px; height:40px; }
+  }
+
+  /* มือถือแนวนอน: หน้าต่างต้องเลื่อนได้ ไม่ล้นจอ */
+  @media screen and (max-height:480px) and (orientation:landscape){
+    .modal-box{ max-height:96vh; max-height:96dvh; }
+    .auth-wrap{ align-items:flex-start; }
+  }
+
   /* ---------- Printable forms (แบบ ป.1 - ป.4) ----------
      ใช้หน้า PDF ต้นฉบับ (เวกเตอร์ รวมตรามหาวิทยาลัย / ตราครุฑ) เป็นพื้นหลัง
      แล้ววางข้อมูลทับบนช่องตามพิกัดจริงของฟอร์ม พิมพ์เต็มหน้า A4 ไม่มีขอบ */
@@ -273,6 +379,32 @@
   .form-pick.active{ border-color:var(--accent); background:var(--accent-soft); }
   .form-pick.active .code{ color:var(--accent); }
   .pm-sec{ display:none; }
+  /* ---------- Print menu: แท็บเลือกแบบฟอร์มอยู่ด้านล่าง ---------- */
+  .pm-box{ display:flex; flex-direction:column; padding:0; overflow:hidden; }
+  .pm-body{ padding:24px 26px 20px; overflow:auto; flex:1 1 auto; }
+  .pm-form-desc{ font-size:13.5px; font-weight:600; color:var(--accent); margin-bottom:14px; }
+  .pm-tabs{
+    display:grid; grid-template-columns:repeat(4,1fr); flex:0 0 auto;
+    border-top:1px solid var(--line); background:#F3F5F4;
+  }
+  .pm-tab{
+    appearance:none; border:none; border-right:1px solid var(--line-soft); border-top:3px solid transparent;
+    background:transparent; cursor:pointer; padding:10px 6px 11px; text-align:center;
+    font-family:'Sarabun',sans-serif; color:var(--ink-soft); min-width:0;
+  }
+  .pm-tab:last-child{ border-right:none; }
+  .pm-tab .code{ display:block; font-family:'IBM Plex Sans Thai',sans-serif; font-weight:700; font-size:16px; line-height:1.3; }
+  .pm-tab .desc{ display:block; font-size:11px; line-height:1.25; margin-top:2px; }
+  .pm-tab:hover{ background:#fff; color:var(--blue); }
+  .pm-tab.active{ background:#fff; color:var(--accent); border-top-color:var(--accent); }
+  /* แผงพิมพ์ติดขอบล่างของจอ แท็บเรียงแนวนอนอยู่ล่างสุด */
+  #print-menu-overlay{ align-items:flex-end; justify-content:center; padding:0; }
+  #print-menu-overlay .pm-box{ width:100%; max-width:760px; max-height:92vh; border-bottom:none; box-shadow:0 -8px 30px rgba(20,26,36,.25); }
+  .pm-tabs{ display:flex; flex-wrap:nowrap; padding-bottom:env(safe-area-inset-bottom,0px); }
+  .pm-tab{ flex:1 1 0; white-space:nowrap; }
+  .pm-tab .desc{ overflow:hidden; text-overflow:ellipsis; }
+  @media (max-width:640px){ .pm-body{ padding:18px 16px 14px; } .pm-tab{ padding:9px 2px 10px; } .pm-tab .desc{ font-size:10px; } }
+
   @media (max-width:640px){ .form-picker{ grid-template-columns:1fr; } }
 </style>
 </head>
@@ -569,11 +701,11 @@
           <h2 style="border:none;padding:0;margin:0 0 6px;font-size:19px;">บันทึกข้อมูลโครงงานสำเร็จ</h2>
           <p style="color:var(--ink-soft);font-size:14px;margin:0;">ข้อมูลโครงงานของคุณถูกบันทึกเข้าระบบเรียบร้อยแล้ว</p>
         </div>
-        <table>
+        <div class="table-scroll"><table>
           <tr><td style="width:160px;color:var(--ink-soft);">ชื่อเรื่องโครงงาน</td><td id="success-title" style="font-weight:600;"></td></tr>
           <tr><td style="color:var(--ink-soft);">จำนวนสมาชิก</td><td id="success-members"></td></tr>
           <tr><td style="color:var(--ink-soft);">อาจารย์ที่ปรึกษา</td><td id="success-advisor"></td></tr>
-        </table>
+        </table></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:22px;">
           <button type="button" class="btn accent" id="btn-print-success" style="width:auto;padding:11px 22px;">🖨️ พิมพ์แบบฟอร์ม / บันทึกเป็น PDF</button>
           <button type="button" class="btn ghost" id="btn-success-close" style="width:auto;padding:11px 22px;">กลับไปหน้าหลัก</button>
@@ -582,12 +714,12 @@
 
       <div class="card" id="exam-table-card">
         <h2>ตารางสอบโครงงาน</h2>
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>อาจารย์ที่ปรึกษา</th><th>กำหนดสอบ</th><th>สถานะ</th><th></th><th></th></tr>
           </thead>
           <tbody id="project-table"></tbody>
-        </table>
+        </table></div>
         <div class="empty" id="project-empty">ยังไม่มีโครงงานที่ส่งเข้าระบบ</div>
       </div>
 
@@ -628,23 +760,23 @@
             <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
           </select>
         </div>
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>สาขา</th><th>บทบาท</th><th>เบอร์โทร</th><th>อีเมล</th><th>ลงทะเบียนเมื่อ</th><th></th><th></th></tr>
           </thead>
           <tbody id="admin-user-table"></tbody>
-        </table>
+        </table></div>
         <div class="empty" id="admin-empty" style="display:none;">ไม่พบผู้ใช้ที่ตรงกับเงื่อนไข</div>
       </div>
 
       <div class="card">
         <h2>โครงงานทั้งหมดในระบบ</h2>
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>รหัสผู้ใช้งาน</th><th>ชื่อเรื่องโครงงาน</th><th>อาจารย์ที่ปรึกษา</th><th>กำหนดสอบ</th><th>สถานะ</th><th></th><th></th><th></th></tr>
           </thead>
           <tbody id="admin-project-table"></tbody>
-        </table>
+        </table></div>
         <div class="empty" id="admin-project-empty" style="display:none;">ยังไม่มีโครงงานที่ส่งเข้าระบบ</div>
       </div>
     </main>
@@ -662,29 +794,25 @@
       <div class="field-hint">วันที่ส่งข้อมูล: <strong id="modal-date">—</strong></div>
       <div class="field-hint">กำหนดสอบ: <strong id="modal-schedule">—</strong></div>
       <div class="field-hint" style="margin-bottom:14px;">สถานะ: <strong id="modal-status">—</strong></div>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>รหัสนักศึกษา</th><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>สถานะ</th></tr></thead>
         <tbody id="modal-members"></tbody>
-      </table>
+      </table></div>
       <button type="button" class="btn ghost small" id="modal-print" style="width:auto;margin-top:16px;">🖨️ พิมพ์แบบฟอร์ม / บันทึกเป็น PDF</button>
+      <div class="field-hint" id="modal-print-note" style="display:none;margin-top:16px;">🔒 พิมพ์แบบฟอร์มได้เฉพาะกลุ่มโครงงานของตัวเองเท่านั้น</div>
     </div>
   </div>
 
   <!-- ============ PRINT MENU (เลือกแบบฟอร์ม ป.1 - ป.4) ============ -->
   <div id="print-menu-overlay" class="modal-overlay">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>เลือกแบบฟอร์มที่จะพิมพ์</h3>
-        <button type="button" class="btn ghost small" id="print-menu-close">ปิด</button>
-      </div>
-      <div class="field-hint" style="margin-bottom:14px;">โครงงาน: <strong id="pm-title">—</strong></div>
-
-      <div class="form-picker" id="pm-picker">
-        <button type="button" class="form-pick active" data-form="p1"><span class="code">ป.1</span><span class="desc">คำร้องขอแต่งตั้งเสนอหัวข้อโครงงาน / แต่งตั้งอาจารย์ที่ปรึกษา</span></button>
-        <button type="button" class="form-pick" data-form="p2"><span class="code">ป.2</span><span class="desc">แบบขอยื่นสอบโครงงานวิศวกรรม</span></button>
-        <button type="button" class="form-pick" data-form="p3"><span class="code">ป.3</span><span class="desc">แบบตรวจปริญญานิพนธ์ โครงงานวิศวกรรมฯ 2</span></button>
-        <button type="button" class="form-pick" data-form="p4"><span class="code">ป.4</span><span class="desc">บันทึกข้อความ ขออนุมัติค่าใช้จ่ายเหมาจ่ายในการจัดทำโครงงาน</span></button>
-      </div>
+    <div class="modal-box pm-box">
+      <div class="pm-body">
+        <div class="modal-head">
+          <h3>พิมพ์แบบฟอร์ม</h3>
+          <button type="button" class="btn ghost small" id="print-menu-close">ปิด</button>
+        </div>
+        <div class="field-hint" style="margin-bottom:6px;">โครงงาน: <strong id="pm-title">—</strong></div>
+        <div class="pm-form-desc" id="pm-form-desc"></div>
 
       <div id="pm-options">
         <div class="pm-sec" data-sec="group">
@@ -742,8 +870,17 @@
         </div>
       </div>
 
-      <button type="button" class="btn accent" id="pm-print">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
+        <button type="button" class="btn accent" id="pm-print">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
       <div class="field-hint" style="margin-top:10px;">ช่องที่เว้นว่างไว้ จะพิมพ์เป็นเส้นประให้เขียนด้วยมือ</div>
+      </div>
+
+      <!-- แท็บด้านล่าง: เลือกใบที่จะพิมพ์ -->
+      <div class="pm-tabs" id="pm-picker" role="tablist" aria-label="เลือกแบบฟอร์มที่จะพิมพ์">
+        <button type="button" class="pm-tab active" role="tab" data-form="p1"><span class="code">ป.1</span><span class="desc">แต่งตั้งที่ปรึกษา</span></button>
+        <button type="button" class="pm-tab" role="tab" data-form="p2"><span class="code">ป.2</span><span class="desc">ขอยื่นสอบ</span></button>
+        <button type="button" class="pm-tab" role="tab" data-form="p3"><span class="code">ป.3</span><span class="desc">ตรวจปริญญานิพนธ์</span></button>
+        <button type="button" class="pm-tab" role="tab" data-form="p4"><span class="code">ป.4</span><span class="desc">ขออนุมัติค่าใช้จ่าย</span></button>
+      </div>
     </div>
   </div>
 
@@ -1761,6 +1898,15 @@
     return !!(m && m.joined === true);
   }
 
+  // สิทธิ์พิมพ์แบบฟอร์ม: เจ้าหน้าที่/อาจารย์พิมพ์ได้ทุกกลุ่ม, นักศึกษาพิมพ์ได้เฉพาะกลุ่มที่ตัวเองอยู่
+  function canPrintProject(p){
+    if(!currentUser || !p) return false;
+    if(currentUser.role === "อาจารย์" || currentUser.role === "เจ้าหน้าที่") return true;
+    if(currentUser.role !== "นักศึกษา") return false;
+    const uid = currentUser.studentId;
+    return p.submittedById === uid || (p.members||[]).some(m => m.id === uid);
+  }
+
   async function joinProject(projectId){
     if(!currentUser || currentUser.role !== "นักศึกษา") return;
     await refreshProjects(); // ดึงข้อมูลล่าสุดก่อนเขียน กันทับข้อมูลของเพื่อนในกลุ่ม
@@ -1909,6 +2055,9 @@
       tr.innerHTML = `<td>${m.id}</td><td>${m.name}</td><td>${m.phone||"-"}</td><td><span class="status ${joined ? "done" : "scheduled"}">${joined ? "เข้าร่วมแล้ว" : "รอเข้าร่วม"}</span></td>`;
       mtbody.appendChild(tr);
     });
+    const allowPrint = canPrintProject(p);
+    $("#modal-print").style.display = allowPrint ? "" : "none";
+    $("#modal-print-note").style.display = allowPrint ? "none" : "block";
     $("#project-modal-overlay").classList.add("show");
   }
   function closeProjectModal(){ $("#project-modal-overlay").classList.remove("show"); }
@@ -2438,9 +2587,17 @@
     const d = new Date();
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   }
+  const FORM_TITLES = {
+    p1:"ป.1 · คำร้องขอแต่งตั้งเสนอหัวข้อโครงงาน / แต่งตั้งอาจารย์ที่ปรึกษา",
+    p2:"ป.2 · แบบขอยื่นสอบโครงงานวิศวกรรม",
+    p3:"ป.3 · แบบตรวจปริญญานิพนธ์ โครงงานวิศวกรรมฯ 2",
+    p4:"ป.4 · บันทึกข้อความ ขออนุมัติค่าใช้จ่ายเหมาจ่ายในการจัดทำโครงงาน"
+  };
   function selectPrintForm(key){
     printMenuForm = key;
-    document.querySelectorAll("#pm-picker .form-pick").forEach(btn=>{
+    $("#pm-form-desc").textContent = FORM_TITLES[key] || "";
+    $("#pm-print").textContent = "🖨️ พิมพ์ " + (FORM_TITLES[key] || "").split(" ")[0] + " / บันทึกเป็น PDF";
+    document.querySelectorAll("#pm-picker .pm-tab").forEach(btn=>{
       btn.classList.toggle("active", btn.dataset.form === key);
     });
     document.querySelectorAll("#pm-options .pm-sec").forEach(sec=>{
@@ -2450,6 +2607,10 @@
   function openPrintMenu(projectId){
     const p = projects.find(pr => pr.id === projectId);
     if(!p) return;
+    if(!canPrintProject(p)){
+      alert("พิมพ์แบบฟอร์มได้เฉพาะกลุ่มโครงงานของตัวเองเท่านั้น");
+      return;
+    }
     printMenuProjectId = projectId;
     $("#pm-title").textContent = p.title;
     if(!$("#pm-date").value) $("#pm-date").value = todayISO();
@@ -2469,7 +2630,7 @@
       date: $("#pm-date").value
     };
   }
-  document.querySelectorAll("#pm-picker .form-pick").forEach(btn=>{
+  document.querySelectorAll("#pm-picker .pm-tab").forEach(btn=>{
     btn.addEventListener("click", ()=> selectPrintForm(btn.dataset.form));
   });
   $("#pm-group").addEventListener("change", ()=>{
@@ -2482,6 +2643,11 @@
   $("#pm-print").addEventListener("click", async ()=>{
     const p = projects.find(pr => pr.id === printMenuProjectId);
     if(!p) return;
+    if(!canPrintProject(p)){
+      closePrintMenu();
+      alert("พิมพ์แบบฟอร์มได้เฉพาะกลุ่มโครงงานของตัวเองเท่านั้น");
+      return;
+    }
     const btn = $("#pm-print");
     btn.disabled = true;
     try{
