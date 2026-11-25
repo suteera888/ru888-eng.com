@@ -356,7 +356,7 @@
   .print-sheet{ display:none; }
   @media print{
     @page{ size:A4 portrait; margin:0; }
-    html, body{ margin:0; padding:0; background:#fff; height:auto; }
+    html, body{ margin:0; padding:0; background:#fff; height:auto !important; min-height:0 !important; overflow:visible !important; }
     .screen, .modal-overlay, .grid-bg{ display:none !important; }
     #app{ min-height:0 !important; }
     .print-sheet.printing{
@@ -871,6 +871,7 @@
       </div>
 
         <button type="button" class="btn accent" id="pm-print">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
+        <div class="field-hint" id="pm-device-hint" style="margin-top:8px;"></div>
       <div class="field-hint" style="margin-top:10px;">ช่องที่เว้นว่างไว้ จะพิมพ์เป็นเส้นประให้เขียนด้วยมือ</div>
       </div>
 
@@ -2615,7 +2616,37 @@
     $("#pm-title").textContent = p.title;
     if(!$("#pm-date").value) $("#pm-date").value = todayISO();
     selectPrintForm(printMenuForm);
+    $("#pm-device-hint").textContent = printDeviceHint();
     $("#print-menu-overlay").classList.add("show");
+    schedulePrepare(0);
+  }
+
+  // ---- เตรียมแบบฟอร์มไว้ล่วงหน้า เพื่อให้ตอนกดพิมพ์เรียก window.print() ได้ทันที
+  //      (iPhone/iPad/Android บล็อกการพิมพ์ถ้าเรียกช้าหลังกดปุ่ม) ----
+  let sheetKey = "", sheetTimer = null, sheetBusy = null;
+  function currentSheetKey(){ return JSON.stringify([printMenuProjectId, printMenuForm, readPrintOptions()]); }
+  function prepareSheet(){
+    const p = projects.find(pr => pr.id === printMenuProjectId);
+    if(!p) return Promise.resolve(false);
+    const key = currentSheetKey();
+    if(key === sheetKey) return Promise.resolve(true);
+    sheetBusy = renderFormSheet(printMenuForm, p, readPrintOptions()).then(()=>{ sheetKey = key; return true; });
+    return sheetBusy;
+  }
+  function schedulePrepare(delay){
+    clearTimeout(sheetTimer);
+    sheetTimer = setTimeout(()=>{ prepareSheet().catch(()=>{}); }, delay == null ? 250 : delay);
+  }
+  function printDeviceHint(){
+    const ua = navigator.userAgent || "";
+    const iOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if(iOS) return "iPhone/iPad: ในหน้าต่างพิมพ์ ใช้สองนิ้วขยายตัวอย่างเพื่อบันทึกเป็น PDF หรือกด แชร์ → บันทึกลงไฟล์";
+    if(/Android/.test(ua)) return "Android: เลือกเครื่องพิมพ์เป็น \"บันทึกเป็น PDF\" ในหน้าต่างพิมพ์";
+    return "คอมพิวเตอร์: เลือกเครื่องพิมพ์ หรือเลือก \"บันทึกเป็น PDF\" ขนาดกระดาษ A4 ไม่ต้องตั้งขอบกระดาษ";
+  }
+  function printUnsupported(){
+    const ua = navigator.userAgent || "";
+    return typeof window.print !== "function" || /\bLine\/|FBAN|FBAV|Instagram|MicroMessenger|; wv\)/.test(ua);
   }
   function closePrintMenu(){ $("#print-menu-overlay").classList.remove("show"); }
   function readPrintOptions(){
@@ -2631,8 +2662,9 @@
     };
   }
   document.querySelectorAll("#pm-picker .pm-tab").forEach(btn=>{
-    btn.addEventListener("click", ()=> selectPrintForm(btn.dataset.form));
+    btn.addEventListener("click", ()=>{ selectPrintForm(btn.dataset.form); schedulePrepare(); });
   });
+  ["input","change"].forEach(ev => $("#print-menu-overlay").addEventListener(ev, ()=> schedulePrepare()));
   $("#pm-group").addEventListener("change", ()=>{
     $("#pm-group-other-field").style.display = $("#pm-group").value === "other" ? "block" : "none";
   });
@@ -2648,20 +2680,32 @@
       alert("พิมพ์แบบฟอร์มได้เฉพาะกลุ่มโครงงานของตัวเองเท่านั้น");
       return;
     }
-    const btn = $("#pm-print");
-    btn.disabled = true;
-    try{
-      await renderFormSheet(printMenuForm, p, readPrintOptions());
-    }catch(err){
-      btn.disabled = false;
-      alert("สร้างแบบฟอร์มไม่สำเร็จ: " + (err && err.message ? err.message : err));
+    if(printUnsupported()){
+      alert("เบราว์เซอร์นี้ไม่รองรับการพิมพ์ กรุณาเปิดเว็บด้วย Safari (iPhone/iPad) หรือ Chrome แล้วลองใหม่");
       return;
     }
-    btn.disabled = false;
+    const btn = $("#pm-print");
+    // แบบฟอร์มที่เตรียมไว้ตรงกับตัวเลือกปัจจุบันแล้ว → สั่งพิมพ์ทันทีโดยไม่รอ (ยังอยู่ในจังหวะที่ผู้ใช้กดปุ่ม)
+    if(currentSheetKey() !== sheetKey){
+      btn.disabled = true;
+      try{
+        clearTimeout(sheetTimer);
+        if(sheetBusy) { try{ await sheetBusy; }catch(e){} }
+        await prepareSheet();
+      }catch(err){
+        btn.disabled = false;
+        alert("สร้างแบบฟอร์มไม่สำเร็จ: " + (err && err.message ? err.message : err));
+        return;
+      }
+      btn.disabled = false;
+    }
     $("#print-sheet").classList.add("printing");
-    // รอให้เบราว์เซอร์วาดภาพเสร็จก่อนเปิดหน้าต่างพิมพ์
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    window.print();
+    try{
+      window.print();
+    }catch(err){
+      $("#print-sheet").classList.remove("printing");
+      alert("เปิดหน้าต่างพิมพ์ไม่สำเร็จ: " + (err && err.message ? err.message : err));
+    }
   });
   window.addEventListener("afterprint", ()=>{
     $("#print-sheet").classList.remove("printing");
