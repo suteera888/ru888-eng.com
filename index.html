@@ -899,6 +899,9 @@
           <div class="field"><label for="se-examdate">วันที่สอบ</label><input type="date" id="se-examdate"></div>
           <div class="field"><label for="se-examtime">เวลา</label><input type="time" id="se-examtime"></div>
         </div>
+        <div style="margin:-6px 0 16px;">
+          <button type="button" class="btn ghost small" data-clear-schedule="se">ล้างวันที่/เวลาสอบ (ยังไม่กำหนด)</button>
+        </div>
         <div class="form-row2">
           <div class="field"><label for="se-examroom">ห้องสอบ</label><input type="text" id="se-examroom" placeholder="เช่น วศ.301"></div>
           <div class="field">
@@ -991,6 +994,9 @@
         <div class="form-row2">
           <div class="field"><label for="pe-examdate">วันที่สอบ</label><input type="date" id="pe-examdate"></div>
           <div class="field"><label for="pe-examtime">เวลา</label><input type="time" id="pe-examtime"></div>
+        </div>
+        <div style="margin:-6px 0 16px;">
+          <button type="button" class="btn ghost small" data-clear-schedule="pe">ล้างวันที่/เวลาสอบ (ยังไม่กำหนด)</button>
         </div>
         <div class="form-row2">
           <div class="field"><label for="pe-examroom">ห้องสอบ</label><input type="text" id="pe-examroom" placeholder="เช่น วศ.301"></div>
@@ -2091,6 +2097,16 @@
   }
   function closeScheduleEditModal(){ $("#schedule-edit-modal-overlay").classList.remove("show"); }
   $("#schedule-edit-close").addEventListener("click", closeScheduleEditModal);
+
+  // ปุ่มล้างวันที่/เวลาสอบ (ใช้ได้ทั้งหน้ากำหนดสอบของอาจารย์/เจ้าหน้าที่ และหน้าแก้ไขโครงงานของแอดมิน)
+  // ล้างเฉพาะในฟอร์ม ต้องกดปุ่มบันทึกอีกครั้งจึงจะมีผลจริง
+  document.querySelectorAll("[data-clear-schedule]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const prefix = btn.dataset.clearSchedule;
+      $("#"+prefix+"-examdate").value = "";
+      $("#"+prefix+"-examtime").value = "";
+    });
+  });
   $("#schedule-edit-modal-overlay").addEventListener("click",(e)=>{
     if(e.target.id === "schedule-edit-modal-overlay") closeScheduleEditModal();
   });
