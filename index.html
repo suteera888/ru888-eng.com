@@ -1899,13 +1899,18 @@
     return !!(m && m.joined === true);
   }
 
-  // สิทธิ์พิมพ์แบบฟอร์ม: เจ้าหน้าที่/อาจารย์พิมพ์ได้ทุกกลุ่ม, นักศึกษาพิมพ์ได้เฉพาะกลุ่มที่ตัวเองอยู่
+  // สิทธิ์พิมพ์แบบฟอร์ม: เจ้าหน้าที่พิมพ์ได้ทุกกลุ่ม, นักศึกษาพิมพ์ได้เฉพาะกลุ่มที่ตัวเองอยู่, อาจารย์พิมพ์ไม่ได้
   function canPrintProject(p){
     if(!currentUser || !p) return false;
-    if(currentUser.role === "อาจารย์" || currentUser.role === "เจ้าหน้าที่") return true;
-    if(currentUser.role !== "นักศึกษา") return false;
+    if(currentUser.role === "เจ้าหน้าที่") return true;
+    if(currentUser.role !== "นักศึกษา") return false; // รวมถึงอาจารย์ = ไม่มีสิทธิ์พิมพ์
     const uid = currentUser.studentId;
     return p.submittedById === uid || (p.members||[]).some(m => m.id === uid);
+  }
+  function printDeniedMessage(){
+    return (currentUser && currentUser.role === "อาจารย์")
+      ? "อาจารย์ไม่มีสิทธิ์พิมพ์แบบฟอร์ม (พิมพ์ได้เฉพาะสมาชิกของกลุ่มนั้นและเจ้าหน้าที่)"
+      : "พิมพ์แบบฟอร์มได้เฉพาะกลุ่มโครงงานของตัวเองเท่านั้น";
   }
 
   async function joinProject(projectId){
@@ -2058,6 +2063,7 @@
     });
     const allowPrint = canPrintProject(p);
     $("#modal-print").style.display = allowPrint ? "" : "none";
+    $("#modal-print-note").textContent = "🔒 " + printDeniedMessage();
     $("#modal-print-note").style.display = allowPrint ? "none" : "block";
     $("#project-modal-overlay").classList.add("show");
   }
@@ -2609,7 +2615,7 @@
     const p = projects.find(pr => pr.id === projectId);
     if(!p) return;
     if(!canPrintProject(p)){
-      alert("พิมพ์แบบฟอร์มได้เฉพาะกลุ่มโครงงานของตัวเองเท่านั้น");
+      alert(printDeniedMessage());
       return;
     }
     printMenuProjectId = projectId;
@@ -2677,7 +2683,7 @@
     if(!p) return;
     if(!canPrintProject(p)){
       closePrintMenu();
-      alert("พิมพ์แบบฟอร์มได้เฉพาะกลุ่มโครงงานของตัวเองเท่านั้น");
+      alert(printDeniedMessage());
       return;
     }
     if(printUnsupported()){
